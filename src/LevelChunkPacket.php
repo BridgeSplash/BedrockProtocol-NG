@@ -29,12 +29,12 @@ class LevelChunkPacket extends DataPacket implements ClientboundPacket{
 	public const NETWORK_ID = ProtocolInfo::LEVEL_CHUNK_PACKET;
 
 	/**
-	 * Client will request all subchunks as needed up to the top of the world.
+	 * Client will request all subchunks as needed up to the top of the world
 	 */
 	private const CLIENT_REQUEST_FULL_COLUMN_FAKE_COUNT = Limits::UINT32_MAX;
 	/**
 	 * Client will request subchunks as needed up to the height written in the packet, and assume that anything above
-	 * that height is air (wtf mojang ...).
+	 * that height is air (wtf mojang ...)
 	 */
 	private const CLIENT_REQUEST_TRUNCATED_COLUMN_FAKE_COUNT = Limits::UINT32_MAX - 1;
 
@@ -45,10 +45,9 @@ class LevelChunkPacket extends DataPacket implements ClientboundPacket{
 	/** @phpstan-var DimensionIds::* */
 	private int $dimensionId;
 	private int $subChunkCount;
-	private ?int $subChunkRequestLimit;
-	private bool $cacheEnabled;
-	/** @var int[] */
-	private array $usedBlobHashes = [];
+	private bool $clientSubChunkRequestsEnabled;
+	/** @var int[]|null */
+	private ?array $usedBlobHashes = null;
 	private string $extraPayload;
 
 	/**
@@ -56,21 +55,12 @@ class LevelChunkPacket extends DataPacket implements ClientboundPacket{
 	 * @param int[] $usedBlobHashes
 	 * @phpstan-param DimensionIds::* $dimensionId
 	 */
-	public static function create(
-		ChunkPosition $chunkPosition,
-		int $dimensionId,
-		int $subChunkCount,
-		?int $subChunkRequestLimit,
-		bool $cacheEnabled,
-		array $usedBlobHashes,
-		string $extraPayload,
-	) : self{
+	public static function create(ChunkPosition $chunkPosition, int $dimensionId, int $subChunkCount, bool $clientSubChunkRequestsEnabled, ?array $usedBlobHashes, string $extraPayload) : self{
 		$result = new self;
 		$result->chunkPosition = $chunkPosition;
 		$result->dimensionId = $dimensionId;
 		$result->subChunkCount = $subChunkCount;
-		$result->subChunkRequestLimit = $subChunkRequestLimit;
-		$result->cacheEnabled = $cacheEnabled;
+		$result->clientSubChunkRequestsEnabled = $clientSubChunkRequestsEnabled;
 		$result->usedBlobHashes = $usedBlobHashes;
 		$result->extraPayload = $extraPayload;
 		return $result;
@@ -84,18 +74,23 @@ class LevelChunkPacket extends DataPacket implements ClientboundPacket{
 		return $this->subChunkCount;
 	}
 
-	public function getSubChunkRequestLimit() : ?int{
-		return $this->subChunkRequestLimit;
+	public function isClientSubChunkRequestsEnabled() : bool{
+		return $this->clientSubChunkRequestsEnabled;
+	}
+
+	/** @deprecated incorrect name */
+	public function isClientSubChunkRequestEnabled() : bool{
+		return $this->clientSubChunkRequestsEnabled;
 	}
 
 	public function isCacheEnabled() : bool{
-		return $this->cacheEnabled;
+		return $this->usedBlobHashes !== null;
 	}
 
 	/**
-	 * @return int[]
+	 * @return int[]|null
 	 */
-	public function getUsedBlobHashes() : array{
+	public function getUsedBlobHashes() : ?array{
 		return $this->usedBlobHashes;
 	}
 
@@ -109,26 +104,21 @@ class LevelChunkPacket extends DataPacket implements ClientboundPacket{
 			$this->dimensionId = VarInt::readSignedInt($in);
 		}
 
-		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			$this->subChunkCount = VarInt::readUnsignedInt($in);
-			$this->subChunkRequestLimit = CommonTypes::readOptional($in, VarInt::readSignedInt(...));
+		$subChunkCountButNotReally = VarInt::readUnsignedInt($in);
+		if($subChunkCountButNotReally === self::CLIENT_REQUEST_FULL_COLUMN_FAKE_COUNT){
+			$this->clientSubChunkRequestsEnabled = true;
+			$this->subChunkCount = PHP_INT_MAX;
+		}elseif($subChunkCountButNotReally === self::CLIENT_REQUEST_TRUNCATED_COLUMN_FAKE_COUNT){
+			$this->clientSubChunkRequestsEnabled = true;
+			$this->subChunkCount = LE::readUnsignedShort($in);
 		}else{
-			$subChunkCountButNotReally = VarInt::readUnsignedInt($in);
-			if($subChunkCountButNotReally === self::CLIENT_REQUEST_FULL_COLUMN_FAKE_COUNT){
-				$this->subChunkRequestLimit = PHP_INT_MAX;
-				$this->subChunkCount = PHP_INT_MAX;
-			}elseif($subChunkCountButNotReally === self::CLIENT_REQUEST_TRUNCATED_COLUMN_FAKE_COUNT){
-				$this->subChunkRequestLimit = LE::readUnsignedShort($in);
-				$this->subChunkCount = $this->subChunkRequestLimit;
-			}else{
-				$this->subChunkRequestLimit = null;
-				$this->subChunkCount = $subChunkCountButNotReally;
-			}
+			$this->clientSubChunkRequestsEnabled = false;
+			$this->subChunkCount = $subChunkCountButNotReally;
 		}
 
-		$this->cacheEnabled = CommonTypes::getBool($in);
-		$this->usedBlobHashes = [];
-		if($this->cacheEnabled || $protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
+		$cacheEnabled = CommonTypes::getBool($in);
+		if($cacheEnabled){
+			$this->usedBlobHashes = [];
 			$count = VarInt::readUnsignedInt($in);
 			if($count > self::MAX_BLOB_HASHES){
 				throw new PacketDecodeException("Expected at most " . self::MAX_BLOB_HASHES . " blob hashes, got " . $count);
@@ -137,7 +127,6 @@ class LevelChunkPacket extends DataPacket implements ClientboundPacket{
 				$this->usedBlobHashes[] = LE::readUnsignedLong($in);
 			}
 		}
-
 		$this->extraPayload = CommonTypes::getString($in);
 	}
 
@@ -147,28 +136,24 @@ class LevelChunkPacket extends DataPacket implements ClientboundPacket{
 			VarInt::writeSignedInt($out, $this->dimensionId);
 		}
 
-		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			VarInt::writeUnsignedInt($out, $this->subChunkCount);
-			CommonTypes::writeOptional($out, $this->subChunkRequestLimit, VarInt::writeSignedInt(...));
-		}elseif($this->subChunkRequestLimit === null){
-			VarInt::writeUnsignedInt($out, $this->subChunkCount);
-		}elseif($this->subChunkRequestLimit === PHP_INT_MAX){
-			VarInt::writeUnsignedInt($out, self::CLIENT_REQUEST_FULL_COLUMN_FAKE_COUNT);
+		if($this->clientSubChunkRequestsEnabled){
+			if($this->subChunkCount === PHP_INT_MAX){
+				VarInt::writeUnsignedInt($out, self::CLIENT_REQUEST_FULL_COLUMN_FAKE_COUNT);
+			}else{
+				VarInt::writeUnsignedInt($out, self::CLIENT_REQUEST_TRUNCATED_COLUMN_FAKE_COUNT);
+				LE::writeUnsignedShort($out, $this->subChunkCount);
+			}
 		}else{
-			VarInt::writeUnsignedInt($out, self::CLIENT_REQUEST_TRUNCATED_COLUMN_FAKE_COUNT);
-			LE::writeUnsignedShort($out, $this->subChunkRequestLimit);
+			VarInt::writeUnsignedInt($out, $this->subChunkCount);
 		}
 
-		CommonTypes::putBool($out, $this->cacheEnabled);
-		if($this->cacheEnabled || $protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			//these are always written as of 26.40. Not sure why they don't just make an optional out of it since they seem
-			//to like optional lists so much
+		CommonTypes::putBool($out, $this->usedBlobHashes !== null);
+		if($this->usedBlobHashes !== null){
 			VarInt::writeUnsignedInt($out, count($this->usedBlobHashes));
 			foreach($this->usedBlobHashes as $hash){
 				LE::writeUnsignedLong($out, $hash);
 			}
 		}
-
 		CommonTypes::putString($out, $this->extraPayload);
 	}
 

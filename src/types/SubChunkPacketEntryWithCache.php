@@ -12,26 +12,32 @@
 
 declare(strict_types=1);
 
-namespace pocketmine\network\mcpe\protocol\types\inventory\stackrequest;
+namespace pocketmine\network\mcpe\protocol\types;
 
 use pmmp\encoding\ByteBufferReader;
 use pmmp\encoding\ByteBufferWriter;
-use pocketmine\network\mcpe\protocol\types\GetTypeIdFromConstTrait;
+use pmmp\encoding\LE;
 
-/**
- * Not clear what the point of this is. It's sent when the player uses a lab table, but it's not clear why this action
- * is needed.
- */
-final class LabTableCombineStackRequestAction extends ItemStackRequestAction{
-	use GetTypeIdFromConstTrait;
+final class SubChunkPacketEntryWithCache{
 
-	public const ID = ItemStackRequestActionType::LAB_TABLE_COMBINE;
+	public function __construct(
+		private SubChunkPacketEntryCommon $base,
+		private int $usedBlobHash
+	){}
+
+	public function getBase() : SubChunkPacketEntryCommon{ return $this->base; }
+
+	public function getUsedBlobHash() : int{ return $this->usedBlobHash; }
 
 	public static function read(ByteBufferReader $in, int $protocolId) : self{
-		return new self;
+		$base = SubChunkPacketEntryCommon::read($in, $protocolId, true);
+		$usedBlobHash = LE::readUnsignedLong($in);
+
+		return new self($base, $usedBlobHash);
 	}
 
 	public function write(ByteBufferWriter $out, int $protocolId) : void{
-		//NOOP
+		$this->base->write($out, $protocolId, true);
+		LE::writeUnsignedLong($out, $this->usedBlobHash);
 	}
 }

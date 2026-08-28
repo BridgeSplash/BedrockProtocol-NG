@@ -20,7 +20,6 @@ final class GameRuleType{
 		//NOOP
 	}
 
-	public const NULL = 0;
 	public const BOOL = 1;
 	public const INT = 2;
 	public const FLOAT = 3;

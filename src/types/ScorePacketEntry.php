@@ -20,12 +20,11 @@ class ScorePacketEntry{
 	public const TYPE_FAKE_PLAYER = 3;
 
 	public int $scoreboardId;
-	/** @var string|null (optional for remove action) */
-	public ?string $objectiveName;
+	public string $objectiveName;
 	public int $score;
-	public ScorePacketEntryAction $action;
-	/** @var int|null (if action entity or player) */
+	public int $type;
+	/** @var int|null (if type entity or player) */
 	public ?int $actorUniqueId;
-	/** @var string|null (if action fake player) */
+	/** @var string|null (if type fake player) */
 	public ?string $customName;
 }

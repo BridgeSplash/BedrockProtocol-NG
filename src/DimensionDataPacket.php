@@ -19,6 +19,7 @@ use pmmp\encoding\ByteBufferWriter;
 use pmmp\encoding\VarInt;
 use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
 use pocketmine\network\mcpe\protocol\types\DimensionData;
+use pocketmine\network\mcpe\protocol\types\DimensionNameIds;
 use function count;
 
 /**
@@ -29,14 +30,14 @@ class DimensionDataPacket extends DataPacket implements ClientboundPacket{
 
 	/**
 	 * @var DimensionData[]
-	 * @phpstan-var array<string, DimensionData>
+	 * @phpstan-var array<DimensionNameIds::*, DimensionData>
 	 */
 	private array $definitions;
 
 	/**
 	 * @generate-create-func
 	 * @param DimensionData[] $definitions
-	 * @phpstan-param array<string, DimensionData> $definitions
+	 * @phpstan-param array<DimensionNameIds::*, DimensionData> $definitions
 	 */
 	public static function create(array $definitions) : self{
 		$result = new self;
@@ -46,7 +47,7 @@ class DimensionDataPacket extends DataPacket implements ClientboundPacket{
 
 	/**
 	 * @return DimensionData[]
-	 * @phpstan-return array<string, DimensionData>
+	 * @phpstan-return array<DimensionNameIds::*, DimensionData>
 	 */
 	public function getDefinitions() : array{ return $this->definitions; }
 
@@ -55,11 +56,14 @@ class DimensionDataPacket extends DataPacket implements ClientboundPacket{
 
 		for($i = 0, $count = VarInt::readUnsignedInt($in); $i < $count; $i++){
 			$dimensionNameId = CommonTypes::getString($in);
+			$dimensionData = DimensionData::read($in, $protocolId);
+
 			if(isset($this->definitions[$dimensionNameId])){
 				throw new PacketDecodeException("Repeated dimension data for key \"$dimensionNameId\"");
 			}
-
-			$dimensionData = DimensionData::read($in, $protocolId);
+			if($dimensionNameId !== DimensionNameIds::OVERWORLD && $dimensionNameId !== DimensionNameIds::NETHER && $dimensionNameId !== DimensionNameIds::THE_END){
+				throw new PacketDecodeException("Invalid dimension name ID \"$dimensionNameId\"");
+			}
 			$this->definitions[$dimensionNameId] = $dimensionData;
 		}
 	}

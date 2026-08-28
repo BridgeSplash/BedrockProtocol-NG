@@ -14,19 +14,14 @@ declare(strict_types=1);
 
 namespace pocketmine\network\mcpe\protocol\types\skin;
 
-use pocketmine\color\Color;
 use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use Ramsey\Uuid\Uuid;
 
 class SkinData{
 
-	public const GEOMETRY_DATA_NONE = "{}";
+	public const ARM_SIZE_SLIM = "slim";
+	public const ARM_SIZE_WIDE = "wide";
 
-	public const TRUSTED_SKIN_UNSET = "unset";
-	public const TRUSTED_SKIN_FALSE = "false";
-	public const TRUSTED_SKIN_TRUE = "true";
-
-	private Color $skinColor;
 	private SkinImage $capeImage;
 	private string $fullSkinId;
 
@@ -34,9 +29,6 @@ class SkinData{
 	 * @param SkinAnimation[]         $animations
 	 * @param PersonaSkinPiece[]      $personaPieces
 	 * @param PersonaPieceTintColor[] $pieceTintColors
-	 * @phpstan-param list<SkinAnimation> $animations
-	 * @phpstan-param list<PersonaSkinPiece> $personaPieces
-	 * @phpstan-param list<PersonaPieceTintColor> $pieceTintColors
 	 */
 	public function __construct(
 		private string $skinId,
@@ -45,91 +37,116 @@ class SkinData{
 		private SkinImage $skinImage,
 		private array $animations = [],
 		?SkinImage $capeImage = null,
-		private string $geometryDataJson = self::GEOMETRY_DATA_NONE,
+		private string $geometryData = "",
 		private string $geometryDataEngineVersion = ProtocolInfo::MINECRAFT_VERSION_NETWORK,
 		private string $animationData = "",
 		private string $capeId = "",
 		?string $fullSkinId = null,
-		private SkinArmSizeType $armSize = SkinArmSizeType::WIDE,
-		?Color $skinColor = null,
+		private string $armSize = self::ARM_SIZE_WIDE,
+		private string $skinColor = "",
 		private array $personaPieces = [],
 		private array $pieceTintColors = [],
-		private string $trustedSkinFlag = self::TRUSTED_SKIN_TRUE,
+		private bool $isVerified = true,
 		private bool $premium = false,
 		private bool $persona = false,
 		private bool $personaCapeOnClassic = false,
 		private bool $isPrimaryUser = true,
-		private bool $override = true,
-		private string $profileHash = ""
+		private bool $override = true
 	){
-		$this->skinColor = $skinColor ?? new Color(0, 0, 0, 0);
 		$this->capeImage = $capeImage ?? new SkinImage(0, 0, "");
 		//this has to be unique or the client will do stupid things
 		$this->fullSkinId = $fullSkinId ?? Uuid::uuid4()->toString();
 	}
 
-	public function getSkinId() : string{ return $this->skinId; }
+	public function getSkinId() : string{
+		return $this->skinId;
+	}
 
 	public function getPlayFabId() : string{ return $this->playFabId; }
 
-	public function getResourcePatch() : string{ return $this->resourcePatch; }
+	public function getResourcePatch() : string{
+		return $this->resourcePatch;
+	}
 
-	public function getSkinImage() : SkinImage{ return $this->skinImage; }
+	public function getSkinImage() : SkinImage{
+		return $this->skinImage;
+	}
 
 	/**
 	 * @return SkinAnimation[]
-	 * @phpstan-return list<SkinAnimation>
 	 */
-	public function getAnimations() : array{ return $this->animations; }
+	public function getAnimations() : array{
+		return $this->animations;
+	}
 
-	public function getCapeImage() : SkinImage{ return $this->capeImage; }
+	public function getCapeImage() : SkinImage{
+		return $this->capeImage;
+	}
 
-	public function getGeometryDataJson() : string{ return $this->geometryDataJson; }
+	public function getGeometryData() : string{
+		return $this->geometryData;
+	}
 
 	public function getGeometryDataEngineVersion() : string{ return $this->geometryDataEngineVersion; }
 
-	public function getAnimationData() : string{ return $this->animationData; }
+	public function getAnimationData() : string{
+		return $this->animationData;
+	}
 
-	public function getCapeId() : string{ return $this->capeId; }
+	public function getCapeId() : string{
+		return $this->capeId;
+	}
 
-	public function getFullSkinId() : string{ return $this->fullSkinId; }
+	public function getFullSkinId() : string{
+		return $this->fullSkinId;
+	}
 
-	public function getArmSize() : SkinArmSizeType{ return $this->armSize; }
+	public function getArmSize() : string{
+		return $this->armSize;
+	}
 
-	public function getSkinColor() : Color{ return $this->skinColor; }
+	public function getSkinColor() : string{
+		return $this->skinColor;
+	}
 
 	/**
 	 * @return PersonaSkinPiece[]
-	 * @phpstan-return list<PersonaSkinPiece>
 	 */
-	public function getPersonaPieces() : array{ return $this->personaPieces; }
+	public function getPersonaPieces() : array{
+		return $this->personaPieces;
+	}
 
 	/**
 	 * @return PersonaPieceTintColor[]
-	 * @phpstan-return list<PersonaPieceTintColor>
 	 */
-	public function getPieceTintColors() : array{ return $this->pieceTintColors; }
+	public function getPieceTintColors() : array{
+		return $this->pieceTintColors;
+	}
 
-	public function isPersona() : bool{ return $this->persona; }
+	public function isPersona() : bool{
+		return $this->persona;
+	}
 
-	public function isPremium() : bool{ return $this->premium; }
+	public function isPremium() : bool{
+		return $this->premium;
+	}
 
-	public function isPersonaCapeOnClassic() : bool{ return $this->personaCapeOnClassic; }
+	public function isPersonaCapeOnClassic() : bool{
+		return $this->personaCapeOnClassic;
+	}
 
 	public function isPrimaryUser() : bool{ return $this->isPrimaryUser; }
 
 	public function isOverride() : bool{ return $this->override; }
 
-	public function getTrustedSkinFlag() : string{ return $this->trustedSkinFlag; }
-
-	public function isVerified() : bool{ return $this->trustedSkinFlag === self::TRUSTED_SKIN_TRUE; }
+	public function isVerified() : bool{
+		return $this->isVerified;
+	}
 
 	/**
 	 * @internal
 	 */
 	public function setVerified(bool $verified) : void{
-		$this->trustedSkinFlag = $verified ? self::TRUSTED_SKIN_TRUE : self::TRUSTED_SKIN_FALSE;
+		$this->isVerified = $verified;
 	}
-
-	public function getProfileHash() : string{ return $this->profileHash; }
 }

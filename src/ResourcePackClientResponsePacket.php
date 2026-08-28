@@ -18,24 +18,16 @@ use pmmp\encoding\Byte;
 use pmmp\encoding\ByteBufferReader;
 use pmmp\encoding\ByteBufferWriter;
 use pmmp\encoding\LE;
-use pmmp\encoding\VarInt;
 use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
 use function count;
 
 class ResourcePackClientResponsePacket extends DataPacket implements ServerboundPacket{
 	public const NETWORK_ID = ProtocolInfo::RESOURCE_PACK_CLIENT_RESPONSE_PACKET;
 
-	public const STATUS_REFUSED = 0;
-	public const STATUS_SEND_PACKS = 1;
-	public const STATUS_HAVE_ALL_PACKS = 2;
-	public const STATUS_COMPLETED = 3;
-
-	private const INNER_TYPES = [
-		self::STATUS_REFUSED => "cancel",
-		self::STATUS_SEND_PACKS => "downloading",
-		self::STATUS_HAVE_ALL_PACKS => "downloadingfinished",
-		self::STATUS_COMPLETED => "resourcepackstackfinished"
-	];
+	public const STATUS_REFUSED = 1;
+	public const STATUS_SEND_PACKS = 2;
+	public const STATUS_HAVE_ALL_PACKS = 3;
+	public const STATUS_COMPLETED = 4;
 
 	public int $status;
 	/** @var string[] */
@@ -53,49 +45,19 @@ class ResourcePackClientResponsePacket extends DataPacket implements Serverbound
 	}
 
 	protected function decodePayload(ByteBufferReader $in, int $protocolId) : void{
-		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			$this->status = VarInt::readUnsignedInt($in);
-			$innerType = CommonTypes::getString($in);
-			$expectedInnerType = self::INNER_TYPES[$this->status] ?? "unknown";
-			if($innerType !== $expectedInnerType){
-				throw new PacketDecodeException("Unexpected inner type $innerType for resource pack client response status $this->status, expected $expectedInnerType");
-			}
-
-			if($this->status === self::STATUS_SEND_PACKS){
-				$this->packIds = [];
-				for($i = 0, $count = VarInt::readUnsignedInt($in); $i < $count; ++$i){
-					$this->packIds[] = CommonTypes::getString($in);
-				}
-			}
-		}else{
-			$this->status = Byte::readUnsigned($in) - 1;
-			$entryCount = LE::readUnsignedShort($in);
-			$this->packIds = [];
-			while($entryCount-- > 0){
-				$this->packIds[] = CommonTypes::getString($in);
-			}
+		$this->status = Byte::readUnsigned($in);
+		$entryCount = LE::readUnsignedShort($in);
+		$this->packIds = [];
+		while($entryCount-- > 0){
+			$this->packIds[] = CommonTypes::getString($in);
 		}
 	}
 
 	protected function encodePayload(ByteBufferWriter $out, int $protocolId) : void{
-		if($protocolId < ProtocolInfo::PROTOCOL_1_26_40){
-			VarInt::writeUnsignedInt($out, $this->status);
-			if(!isset(self::INNER_TYPES[$this->status])){
-				throw new \LogicException("Unknown resource pack client response status $this->status");
-			}
-			CommonTypes::putString($out, self::INNER_TYPES[$this->status]);
-			if($this->status === self::STATUS_SEND_PACKS){
-				VarInt::writeUnsignedInt($out, count($this->packIds));
-				foreach($this->packIds as $id){
-					CommonTypes::putString($out, $id);
-				}
-			}
-		}else{
-			Byte::writeUnsigned($out, $this->status + 1);
-			LE::writeUnsignedShort($out, count($this->packIds));
-			foreach($this->packIds as $id){
-				CommonTypes::putString($out, $id);
-			}
+		Byte::writeUnsigned($out, $this->status);
+		LE::writeUnsignedShort($out, count($this->packIds));
+		foreach($this->packIds as $id){
+			CommonTypes::putString($out, $id);
 		}
 	}
 

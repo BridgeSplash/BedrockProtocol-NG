@@ -21,17 +21,15 @@ use pocketmine\network\mcpe\protocol\CraftingDataPacket;
 use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
 use pocketmine\network\mcpe\protocol\types\inventory\ItemStack;
 
-final class FurnaceRecipe{
+final class FurnaceRecipe extends RecipeWithTypeId{
 	public function __construct(
-		private int $typeId,
+		int $typeId,
 		private int $inputId,
 		private ?int $inputMeta,
 		private ItemStack $result,
 		private string $blockName
-	){}
-
-	public function getTypeId() : int{
-		return $this->typeId;
+	){
+		parent::__construct($typeId);
 	}
 
 	public function getInputId() : int{
@@ -50,13 +48,13 @@ final class FurnaceRecipe{
 		return $this->blockName;
 	}
 
-	public static function decode(int $typeId, ByteBufferReader $in, int $protocolId) : self{
+	public static function decode(int $typeId, ByteBufferReader $in) : self{
 		$inputId = VarInt::readSignedInt($in);
 		$inputData = null;
 		if($typeId === CraftingDataPacket::ENTRY_FURNACE_DATA){
 			$inputData = VarInt::readSignedInt($in);
 		}
-		$output = CommonTypes::getItemStackWithoutStackId($in, $protocolId);
+		$output = CommonTypes::getItemStackWithoutStackId($in);
 		$block = CommonTypes::getString($in);
 
 		return new self($typeId, $inputId, $inputData, $output, $block);
@@ -67,7 +65,7 @@ final class FurnaceRecipe{
 		if($this->getTypeId() === CraftingDataPacket::ENTRY_FURNACE_DATA){
 			VarInt::writeSignedInt($out, $this->inputMeta);
 		}
-		CommonTypes::putItemStackWithoutStackId($out, $protocolId, $this->result);
+		CommonTypes::putItemStackWithoutStackId($out, $this->result);
 		CommonTypes::putString($out, $this->blockName);
 	}
 }

@@ -20,7 +20,6 @@ use pmmp\encoding\LE;
 use pmmp\encoding\VarInt;
 use pocketmine\math\Vector3;
 use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
-use pocketmine\network\mcpe\protocol\types\AbilitiesData;
 use pocketmine\network\mcpe\protocol\types\DeviceOS;
 use pocketmine\network\mcpe\protocol\types\entity\EntityLink;
 use pocketmine\network\mcpe\protocol\types\entity\MetadataProperty;
@@ -50,7 +49,7 @@ class AddPlayerPacket extends DataPacket implements ClientboundPacket{
 	public array $metadata = [];
 	public PropertySyncData $syncedProperties;
 
-	public AbilitiesData $abilities;
+	public UpdateAbilitiesPacket $abilitiesPacket;
 
 	/** @var EntityLink[] */
 	public array $links = [];
@@ -77,7 +76,7 @@ class AddPlayerPacket extends DataPacket implements ClientboundPacket{
 		int $gameMode,
 		array $metadata,
 		PropertySyncData $syncedProperties,
-		AbilitiesData $abilities,
+		UpdateAbilitiesPacket $abilitiesPacket,
 		array $links,
 		string $deviceId,
 		int $buildPlatform,
@@ -96,7 +95,7 @@ class AddPlayerPacket extends DataPacket implements ClientboundPacket{
 		$result->gameMode = $gameMode;
 		$result->metadata = $metadata;
 		$result->syncedProperties = $syncedProperties;
-		$result->abilities = $abilities;
+		$result->abilitiesPacket = $abilitiesPacket;
 		$result->links = $links;
 		$result->deviceId = $deviceId;
 		$result->buildPlatform = $buildPlatform;
@@ -113,12 +112,13 @@ class AddPlayerPacket extends DataPacket implements ClientboundPacket{
 		$this->pitch = LE::readFloat($in);
 		$this->yaw = LE::readFloat($in);
 		$this->headYaw = LE::readFloat($in);
-		$this->item = CommonTypes::getItemStackWrapper($in, $protocolId, $protocolId >= ProtocolInfo::PROTOCOL_1_26_40);
+		$this->item = CommonTypes::getItemStackWrapper($in);
 		$this->gameMode = VarInt::readSignedInt($in);
-		$this->metadata = CommonTypes::getEntityMetadata($in, $protocolId);
+		$this->metadata = CommonTypes::getEntityMetadata($in);
 		$this->syncedProperties = PropertySyncData::read($in);
 
-		$this->abilities = AbilitiesData::decode($in, $protocolId);
+		$this->abilitiesPacket = new UpdateAbilitiesPacket();
+		$this->abilitiesPacket->decodePayload($in, $protocolId);
 
 		$linkCount = VarInt::readUnsignedInt($in);
 		for($i = 0; $i < $linkCount; ++$i){
@@ -139,12 +139,12 @@ class AddPlayerPacket extends DataPacket implements ClientboundPacket{
 		LE::writeFloat($out, $this->pitch);
 		LE::writeFloat($out, $this->yaw);
 		LE::writeFloat($out, $this->headYaw);
-		CommonTypes::putItemStackWrapper($out, $protocolId, $this->item, $protocolId >= ProtocolInfo::PROTOCOL_1_26_40);
+		CommonTypes::putItemStackWrapper($out, $this->item);
 		VarInt::writeSignedInt($out, $this->gameMode);
-		CommonTypes::putEntityMetadata($out, $protocolId, $this->metadata);
+		CommonTypes::putEntityMetadata($out, $this->metadata);
 		$this->syncedProperties->write($out);
 
-		$this->abilities->encode($out, $protocolId);
+		$this->abilitiesPacket->encodePayload($out, $protocolId);
 
 		VarInt::writeUnsignedInt($out, count($this->links));
 		foreach($this->links as $link){

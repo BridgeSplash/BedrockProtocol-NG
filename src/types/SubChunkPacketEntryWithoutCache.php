@@ -16,27 +16,20 @@ namespace pocketmine\network\mcpe\protocol\types;
 
 use pmmp\encoding\ByteBufferReader;
 use pmmp\encoding\ByteBufferWriter;
-use pmmp\encoding\LE;
 
-final class MovePlayerTeleportData{
+final class SubChunkPacketEntryWithoutCache{
 
 	public function __construct(
-		private int $cause,
-		private int $sourceActorType
+		private SubChunkPacketEntryCommon $base
 	){}
 
-	public function getCause() : int{ return $this->cause; }
+	public function getBase() : SubChunkPacketEntryCommon{ return $this->base; }
 
-	public function getSourceActorType() : int{ return $this->sourceActorType; }
-
-	public static function read(ByteBufferReader $in) : self{
-		$cause = LE::readUnsignedInt($in);
-		$sourceActorType = LE::readUnsignedInt($in);
-		return new self($cause, $sourceActorType);
+	public static function read(ByteBufferReader $in, int $protocolId) : self{
+		return new self(SubChunkPacketEntryCommon::read($in, $protocolId, false));
 	}
 
-	public function write(ByteBufferWriter $out) : void{
-		LE::writeUnsignedInt($out, $this->cause);
-		LE::writeUnsignedInt($out, $this->sourceActorType);
+	public function write(ByteBufferWriter $out, int $protocolId) : void{
+		$this->base->write($out, $protocolId, false);
 	}
 }
