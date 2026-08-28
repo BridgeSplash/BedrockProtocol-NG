@@ -70,6 +70,8 @@ final class ProtocolInfo{
 	/** Version sent on the network for client side compatibility checks. This may differ from the display version. */
 	public const MINECRAFT_VERSION_NETWORK = '1.26.40';
 
+	public const PROTOCOL_1_26_44 = 2170; // HACK: this isn't 2170, actually. just doing some shit stuff and looks horrible
+	public const PROTOCOL_1_26_45 = 2169; // hotfix, they just reverted .44 stuff here
 	public const PROTOCOL_1_26_40 = 2168;
 	public const PROTOCOL_1_26_30 = 1001;
 	public const PROTOCOL_1_26_20 = 975;
