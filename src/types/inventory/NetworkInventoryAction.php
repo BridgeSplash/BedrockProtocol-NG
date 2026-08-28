@@ -74,7 +74,11 @@ class NetworkInventoryAction{
 	 * @throws DataDecodeException
 	 * @throws PacketDecodeException
 	 */
-	public function readAuthInput(ByteBufferReader $in) : NetworkInventoryAction{
+	public function readAuthInput(ByteBufferReader $in, int $protocolId) : NetworkInventoryAction{
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
+			return $this->readTransaction($in, $protocolId);
+		}
+
 		$this->sourceType = VarInt::readUnsignedInt($in);
 
 		switch($this->sourceType){
@@ -94,13 +98,18 @@ class NetworkInventoryAction{
 		}
 
 		$this->inventorySlot = VarInt::readUnsignedInt($in);
-		$this->oldItem = CommonTypes::getItemStackWrapper($in);
-		$this->newItem = CommonTypes::getItemStackWrapper($in);
+		$this->oldItem = CommonTypes::getItemStackWrapper($in, $protocolId);
+		$this->newItem = CommonTypes::getItemStackWrapper($in, $protocolId);
 
 		return $this;
 	}
 
-	public function writeAuthInput(ByteBufferWriter $out) : void{
+	public function writeAuthInput(ByteBufferWriter $out, int $protocolId) : void{
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
+			$this->writeTransaction($out, $protocolId);
+			return;
+		}
+
 		VarInt::writeUnsignedInt($out, $this->sourceType);
 
 		switch($this->sourceType){
@@ -129,8 +138,8 @@ class NetworkInventoryAction{
 		}
 
 		VarInt::writeUnsignedInt($out, $this->inventorySlot);
-		CommonTypes::putItemStackWrapper($out, $this->oldItem);
-		CommonTypes::putItemStackWrapper($out, $this->newItem);
+		CommonTypes::putItemStackWrapper($out, $protocolId, $this->oldItem);
+		CommonTypes::putItemStackWrapper($out, $protocolId, $this->newItem);
 	}
 
 	/**
@@ -141,7 +150,7 @@ class NetworkInventoryAction{
 	 */
 	public function readTransaction(ByteBufferReader $in, int $protocolId) : NetworkInventoryAction{
 		if($protocolId <= ProtocolInfo::PROTOCOL_1_26_20){
-			return $this->readAuthInput($in);
+			return $this->readAuthInput($in, $protocolId);
 		}
 
 		$this->sourceType = VarInt::readUnsignedInt($in);
@@ -157,8 +166,8 @@ class NetworkInventoryAction{
 		$this->sourceFlags = CommonTypes::readOptional($in, VarInt::readUnsignedInt(...));
 
 		$this->inventorySlot = VarInt::readUnsignedInt($in);
-		$this->oldItem = CommonTypes::getNetworkItemStackDescriptor($in);
-		$this->newItem = CommonTypes::getNetworkItemStackDescriptor($in);
+		$this->oldItem = CommonTypes::getNetworkItemStackDescriptor($in, $protocolId);
+		$this->newItem = CommonTypes::getNetworkItemStackDescriptor($in, $protocolId);
 
 		return $this;
 	}
@@ -168,7 +177,7 @@ class NetworkInventoryAction{
 	 */
 	public function writeTransaction(ByteBufferWriter $out, int $protocolId) : void{
 		if($protocolId <= ProtocolInfo::PROTOCOL_1_26_20){
-			$this->writeAuthInput($out);
+			$this->writeAuthInput($out, $protocolId);
 			return;
 		}
 
@@ -181,7 +190,7 @@ class NetworkInventoryAction{
 		CommonTypes::writeOptional($out, $this->sourceFlags, VarInt::writeUnsignedInt(...));
 
 		VarInt::writeUnsignedInt($out, $this->inventorySlot);
-		CommonTypes::putNetworkItemStackDescriptor($out, $this->oldItem);
-		CommonTypes::putNetworkItemStackDescriptor($out, $this->newItem);
+		CommonTypes::putNetworkItemStackDescriptor($out, $protocolId, $this->oldItem);
+		CommonTypes::putNetworkItemStackDescriptor($out, $protocolId, $this->newItem);
 	}
 }

@@ -32,7 +32,7 @@ class MobEquipmentPacket extends DataPacket implements ClientboundPacket, Server
 	/**
 	 * @generate-create-func
 	 */
-	public static function create(int $actorRuntimeId, ItemStackWrapper $item, int $inventorySlot, int $hotbarSlot, int $windowId) : self{
+	public static function create(int $actorRuntimeId, \pocketmine\network\mcpe\protocol\types\inventory\ItemStackWrapper $item, int $inventorySlot, int $hotbarSlot, int $windowId) : self{
 		$result = new self;
 		$result->actorRuntimeId = $actorRuntimeId;
 		$result->item = $item;
@@ -45,9 +45,9 @@ class MobEquipmentPacket extends DataPacket implements ClientboundPacket, Server
 	protected function decodePayload(ByteBufferReader $in, int $protocolId) : void{
 		$this->actorRuntimeId = CommonTypes::getActorRuntimeId($in);
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_20){
-			$this->item = CommonTypes::getNetworkItemStackDescriptor($in);
+			$this->item = CommonTypes::getNetworkItemStackDescriptor($in, $protocolId);
 		}else{
-			$this->item = CommonTypes::getItemStackWrapper($in);
+			$this->item = CommonTypes::getItemStackWrapper($in, $protocolId);
 		}
 		$this->inventorySlot = Byte::readUnsigned($in);
 		$this->hotbarSlot = Byte::readUnsigned($in);
@@ -57,9 +57,9 @@ class MobEquipmentPacket extends DataPacket implements ClientboundPacket, Server
 	protected function encodePayload(ByteBufferWriter $out, int $protocolId) : void{
 		CommonTypes::putActorRuntimeId($out, $this->actorRuntimeId);
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_20){
-			CommonTypes::putNetworkItemStackDescriptor($out, $this->item);
+			CommonTypes::putNetworkItemStackDescriptor($out, $protocolId, $this->item);
 		}else{
-			CommonTypes::putItemStackWrapper($out, $this->item);
+			CommonTypes::putItemStackWrapper($out, $protocolId, $this->item);
 		}
 		Byte::writeUnsigned($out, $this->inventorySlot);
 		Byte::writeUnsigned($out, $this->hotbarSlot);

@@ -22,6 +22,10 @@ class SkinData{
 	public const ARM_SIZE_SLIM = "slim";
 	public const ARM_SIZE_WIDE = "wide";
 
+	public const TRUSTED_SKIN_UNSET = "unset";
+	public const TRUSTED_SKIN_FALSE = "false";
+	public const TRUSTED_SKIN_TRUE = "true";
+
 	private SkinImage $capeImage;
 	private string $fullSkinId;
 
@@ -51,7 +55,8 @@ class SkinData{
 		private bool $persona = false,
 		private bool $personaCapeOnClassic = false,
 		private bool $isPrimaryUser = true,
-		private bool $override = true
+		private bool $override = true,
+		private string $profileHash = ""
 	){
 		$this->capeImage = $capeImage ?? new SkinImage(0, 0, "");
 		//this has to be unique or the client will do stupid things
@@ -138,6 +143,8 @@ class SkinData{
 	public function isPrimaryUser() : bool{ return $this->isPrimaryUser; }
 
 	public function isOverride() : bool{ return $this->override; }
+
+	public function getProfileHash() : string{ return $this->profileHash; }
 
 	public function isVerified() : bool{
 		return $this->isVerified;

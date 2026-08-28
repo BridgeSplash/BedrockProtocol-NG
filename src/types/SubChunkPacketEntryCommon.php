@@ -17,6 +17,7 @@ namespace pocketmine\network\mcpe\protocol\types;
 use pmmp\encoding\Byte;
 use pmmp\encoding\ByteBufferReader;
 use pmmp\encoding\ByteBufferWriter;
+use pmmp\encoding\DataDecodeException;
 use pocketmine\network\mcpe\protocol\PacketDecodeException;
 use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
@@ -46,27 +47,34 @@ final class SubChunkPacketEntryCommon{
 
 		$requestResult = Byte::readUnsigned($in);
 
-		$data = !$cacheEnabled || $requestResult !== SubChunkRequestResult::SUCCESS_ALL_AIR ? CommonTypes::getString($in) : "";
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
+			$data = CommonTypes::readOptional($in, CommonTypes::getString(...)) ?? "";
 
-		$heightMapDataType = Byte::readUnsigned($in);
-		$heightMapData = match ($heightMapDataType) {
-			SubChunkPacketHeightMapType::NO_DATA => null,
-			SubChunkPacketHeightMapType::DATA => SubChunkPacketHeightMapInfo::read($in),
-			SubChunkPacketHeightMapType::ALL_TOO_HIGH => SubChunkPacketHeightMapInfo::allTooHigh(),
-			SubChunkPacketHeightMapType::ALL_TOO_LOW => SubChunkPacketHeightMapInfo::allTooLow(),
-			default => throw new PacketDecodeException("Unknown heightmap data type $heightMapDataType")
-		};
+			$heightMapData = self::readHeightMap($in, null);
+			$renderHeightMapData = self::readHeightMap($in, $heightMapData);
+		}else{
+			$data = !$cacheEnabled || $requestResult !== SubChunkRequestResult::SUCCESS_ALL_AIR ? CommonTypes::getString($in) : "";
 
-		if($protocolId >= ProtocolInfo::PROTOCOL_1_21_90){
-			$renderHeightMapDataType = Byte::readUnsigned($in);
-			$renderHeightMapData = match ($renderHeightMapDataType) {
+			$heightMapDataType = Byte::readUnsigned($in);
+			$heightMapData = match ($heightMapDataType) {
 				SubChunkPacketHeightMapType::NO_DATA => null,
 				SubChunkPacketHeightMapType::DATA => SubChunkPacketHeightMapInfo::read($in),
 				SubChunkPacketHeightMapType::ALL_TOO_HIGH => SubChunkPacketHeightMapInfo::allTooHigh(),
 				SubChunkPacketHeightMapType::ALL_TOO_LOW => SubChunkPacketHeightMapInfo::allTooLow(),
-				SubChunkPacketHeightMapType::ALL_COPIED => $heightMapData,
-				default => throw new PacketDecodeException("Unknown render heightmap data type $renderHeightMapDataType")
+				default => throw new PacketDecodeException("Unknown heightmap data type $heightMapDataType")
 			};
+
+			if($protocolId >= ProtocolInfo::PROTOCOL_1_21_90){
+				$renderHeightMapDataType = Byte::readUnsigned($in);
+				$renderHeightMapData = match ($renderHeightMapDataType) {
+					SubChunkPacketHeightMapType::NO_DATA => null,
+					SubChunkPacketHeightMapType::DATA => SubChunkPacketHeightMapInfo::read($in),
+					SubChunkPacketHeightMapType::ALL_TOO_HIGH => SubChunkPacketHeightMapInfo::allTooHigh(),
+					SubChunkPacketHeightMapType::ALL_TOO_LOW => SubChunkPacketHeightMapInfo::allTooLow(),
+					SubChunkPacketHeightMapType::ALL_COPIED => $heightMapData,
+					default => throw new PacketDecodeException("Unknown render heightmap data type $renderHeightMapDataType")
+				};
+			}
 		}
 
 		return new self(
@@ -82,6 +90,14 @@ final class SubChunkPacketEntryCommon{
 		$this->offset->write($out);
 
 		Byte::writeUnsigned($out, $this->requestResult);
+
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
+			CommonTypes::writeOptional($out, $this->terrainData, CommonTypes::putString(...));
+
+			self::writeHeightMap($out, $this->heightMap, false);
+			self::writeHeightMap($out, $this->renderHeightMap, true);
+			return;
+		}
 
 		if(!$cacheEnabled || $this->requestResult !== SubChunkRequestResult::SUCCESS_ALL_AIR){
 			CommonTypes::putString($out, $this->terrainData);
@@ -111,6 +127,45 @@ final class SubChunkPacketEntryCommon{
 				Byte::writeUnsigned($out, SubChunkPacketHeightMapType::DATA);
 				$renderHeightMapData->write($out);
 			}
+		}
+	}
+
+	/**
+	 * Since 1.26.40 the heightmap type is followed by an optional, instead of the data being implied by the type.
+	 *
+	 * @throws PacketDecodeException
+	 * @throws DataDecodeException
+	 */
+	private static function readHeightMap(ByteBufferReader $in, ?SubChunkPacketHeightMapInfo $copyFrom) : ?SubChunkPacketHeightMapInfo{
+		$type = Byte::readUnsigned($in);
+		$data = CommonTypes::readOptional($in, SubChunkPacketHeightMapInfo::read(...));
+
+		return match($type){
+			SubChunkPacketHeightMapType::NO_DATA => null,
+			SubChunkPacketHeightMapType::DATA => $data ?? throw new PacketDecodeException("Heightmap type is DATA but no heightmap data was provided"),
+			SubChunkPacketHeightMapType::ALL_TOO_HIGH => SubChunkPacketHeightMapInfo::allTooHigh(),
+			SubChunkPacketHeightMapType::ALL_TOO_LOW => SubChunkPacketHeightMapInfo::allTooLow(),
+			SubChunkPacketHeightMapType::ALL_COPIED => $copyFrom,
+			default => throw new PacketDecodeException("Unknown heightmap data type $type")
+		};
+	}
+
+	private static function writeHeightMap(ByteBufferWriter $out, ?SubChunkPacketHeightMapInfo $heightMap, bool $copiedWhenNull) : void{
+		if($heightMap === null){
+			Byte::writeUnsigned($out, $copiedWhenNull ? SubChunkPacketHeightMapType::ALL_COPIED : SubChunkPacketHeightMapType::NO_DATA);
+			CommonTypes::putBool($out, false);
+			return;
+		}
+
+		if($heightMap->isAllTooLow()){
+			Byte::writeUnsigned($out, SubChunkPacketHeightMapType::ALL_TOO_LOW);
+			CommonTypes::putBool($out, false);
+		}elseif($heightMap->isAllTooHigh()){
+			Byte::writeUnsigned($out, SubChunkPacketHeightMapType::ALL_TOO_HIGH);
+			CommonTypes::putBool($out, false);
+		}else{
+			Byte::writeUnsigned($out, SubChunkPacketHeightMapType::DATA);
+			CommonTypes::writeOptional($out, $heightMap, static fn(ByteBufferWriter $out, SubChunkPacketHeightMapInfo $v) => $v->write($out));
 		}
 	}
 }

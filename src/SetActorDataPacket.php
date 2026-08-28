@@ -38,7 +38,7 @@ class SetActorDataPacket extends DataPacket implements ClientboundPacket, Server
 	 * @param MetadataProperty[] $metadata
 	 * @phpstan-param array<int, MetadataProperty> $metadata
 	 */
-	public static function create(int $actorRuntimeId, array $metadata, PropertySyncData $syncedProperties, int $tick) : self{
+	public static function create(int $actorRuntimeId, array $metadata, \pocketmine\network\mcpe\protocol\types\entity\PropertySyncData $syncedProperties, int $tick) : self{
 		$result = new self;
 		$result->actorRuntimeId = $actorRuntimeId;
 		$result->metadata = $metadata;
@@ -49,14 +49,14 @@ class SetActorDataPacket extends DataPacket implements ClientboundPacket, Server
 
 	protected function decodePayload(ByteBufferReader $in, int $protocolId) : void{
 		$this->actorRuntimeId = CommonTypes::getActorRuntimeId($in);
-		$this->metadata = CommonTypes::getEntityMetadata($in);
+		$this->metadata = CommonTypes::getEntityMetadata($in, $protocolId);
 		$this->syncedProperties = PropertySyncData::read($in);
 		$this->tick = VarInt::readUnsignedLong($in);
 	}
 
 	protected function encodePayload(ByteBufferWriter $out, int $protocolId) : void{
 		CommonTypes::putActorRuntimeId($out, $this->actorRuntimeId);
-		CommonTypes::putEntityMetadata($out, $this->metadata);
+		CommonTypes::putEntityMetadata($out, $protocolId, $this->metadata);
 		$this->syncedProperties->write($out);
 		VarInt::writeUnsignedLong($out, $this->tick);
 	}

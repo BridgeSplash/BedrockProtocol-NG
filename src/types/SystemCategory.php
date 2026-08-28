@@ -12,36 +12,33 @@
 
 declare(strict_types=1);
 
-namespace pocketmine\network\mcpe\protocol\types\inventory;
+namespace pocketmine\network\mcpe\protocol\types;
 
 use pmmp\encoding\ByteBufferReader;
 use pmmp\encoding\ByteBufferWriter;
 use pmmp\encoding\LE;
 use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
 
-final class CreativeGroupEntry{
-	public function __construct(
-		private int $categoryId,
-		private string $categoryName,
-		private ItemStack $icon
-	){}
+final class SystemCategory{
 
-	public function getCategoryId() : int{ return $this->categoryId; }
+	public function __construct(
+		private string $categoryName,
+		private int $systemIndex
+	){}
 
 	public function getCategoryName() : string{ return $this->categoryName; }
 
-	public function getIcon() : ItemStack{ return $this->icon; }
+	public function getSystemIndex() : int{ return $this->systemIndex; }
 
-	public static function read(ByteBufferReader $in, int $protocolId) : self{
-		$categoryId = LE::readSignedInt($in);
+	public static function read(ByteBufferReader $in) : self{
 		$categoryName = CommonTypes::getString($in);
-		$icon = CommonTypes::getItemStackWithoutStackId($in, $protocolId);
-		return new self($categoryId, $categoryName, $icon);
+		$systemIndex = LE::readUnsignedLong($in);
+
+		return new self($categoryName, $systemIndex);
 	}
 
-	public function write(ByteBufferWriter $out, int $protocolId) : void{
-		LE::writeSignedInt($out, $this->categoryId);
+	public function write(ByteBufferWriter $out) : void{
 		CommonTypes::putString($out, $this->categoryName);
-		CommonTypes::putItemStackWithoutStackId($out, $protocolId, $this->icon);
+		LE::writeUnsignedLong($out, $this->systemIndex);
 	}
 }

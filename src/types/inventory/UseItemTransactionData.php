@@ -102,9 +102,9 @@ class UseItemTransactionData extends TransactionData{
 		}
 		$this->hotbarSlot = VarInt::readSignedInt($in);
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_30){
-			$this->itemInHand = CommonTypes::getNetworkItemStackDescriptor($in);
+			$this->itemInHand = CommonTypes::getNetworkItemStackDescriptor($in, $protocolId);
 		}else{
-			$this->itemInHand = CommonTypes::getItemStackWrapper($in);
+			$this->itemInHand = CommonTypes::getItemStackWrapper($in, $protocolId);
 		}
 		$this->playerPosition = CommonTypes::getVector3($in);
 		$this->clickPosition = CommonTypes::getVector3($in);
@@ -138,9 +138,9 @@ class UseItemTransactionData extends TransactionData{
 		}
 		VarInt::writeSignedInt($out, $this->hotbarSlot);
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_30){
-			CommonTypes::putNetworkItemStackDescriptor($out, $this->itemInHand);
+			CommonTypes::putNetworkItemStackDescriptor($out, $protocolId, $this->itemInHand);
 		}else{
-			CommonTypes::putItemStackWrapper($out, $this->itemInHand);
+			CommonTypes::putItemStackWrapper($out, $protocolId, $this->itemInHand);
 		}
 		CommonTypes::putVector3($out, $this->playerPosition);
 		CommonTypes::putVector3($out, $this->clickPosition);
@@ -162,15 +162,15 @@ class UseItemTransactionData extends TransactionData{
 	 */
 	private static function initSelf(
 		int $actionType,
-		TriggerType $triggerType,
-		BlockPosition $blockPosition,
+		\pocketmine\network\mcpe\protocol\types\inventory\TriggerType $triggerType,
+		\pocketmine\network\mcpe\protocol\types\BlockPosition $blockPosition,
 		int $face,
 		int $hotbarSlot,
-		ItemStackWrapper $itemInHand,
-		Vector3 $playerPosition,
-		Vector3 $clickPosition,
+		\pocketmine\network\mcpe\protocol\types\inventory\ItemStackWrapper $itemInHand,
+		\pocketmine\math\Vector3 $playerPosition,
+		\pocketmine\math\Vector3 $clickPosition,
 		int $blockRuntimeId,
-		PredictedResult $clientInteractPrediction,
+		\pocketmine\network\mcpe\protocol\types\inventory\PredictedResult $clientInteractPrediction,
 		int $clientCooldownState,
 	) : self{
 		$result = new self;

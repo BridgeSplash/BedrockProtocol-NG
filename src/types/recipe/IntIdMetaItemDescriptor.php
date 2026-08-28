@@ -19,6 +19,9 @@ use pmmp\encoding\ByteBufferWriter;
 use pmmp\encoding\LE;
 use pocketmine\network\mcpe\protocol\types\GetTypeIdFromConstTrait;
 
+/**
+ * No longer sent since 1.26.40.
+ */
 final class IntIdMetaItemDescriptor implements ItemDescriptor{
 	use GetTypeIdFromConstTrait;
 
@@ -37,7 +40,7 @@ final class IntIdMetaItemDescriptor implements ItemDescriptor{
 
 	public function getMeta() : int{ return $this->meta; }
 
-	public static function read(ByteBufferReader $in) : self{
+	public static function read(ByteBufferReader $in, int $protocolId) : self{
 		$id = LE::readSignedShort($in);
 		if($id !== 0){
 			$meta = LE::readSignedShort($in);
@@ -48,7 +51,7 @@ final class IntIdMetaItemDescriptor implements ItemDescriptor{
 		return new self($id, $meta);
 	}
 
-	public function write(ByteBufferWriter $out) : void{
+	public function write(ByteBufferWriter $out, int $protocolId) : void{
 		LE::writeSignedShort($out, $this->id);
 		if($this->id !== 0){
 			LE::writeSignedShort($out, $this->meta);

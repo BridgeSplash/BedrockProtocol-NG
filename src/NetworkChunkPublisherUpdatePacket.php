@@ -37,7 +37,7 @@ class NetworkChunkPublisherUpdatePacket extends DataPacket implements Clientboun
 	 * @generate-create-func
 	 * @param ChunkPosition[] $savedChunks
 	 */
-	public static function create(BlockPosition $blockPosition, int $radius, array $savedChunks) : self{
+	public static function create(\pocketmine\network\mcpe\protocol\types\BlockPosition $blockPosition, int $radius, array $savedChunks) : self{
 		$result = new self;
 		$result->blockPosition = $blockPosition;
 		$result->radius = $radius;

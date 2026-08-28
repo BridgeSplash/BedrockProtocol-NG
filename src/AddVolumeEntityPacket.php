@@ -40,11 +40,11 @@ class AddVolumeEntityPacket extends DataPacket implements ClientboundPacket{
 	 */
 	public static function create(
 		int $entityNetId,
-		CacheableNbt $data,
+		\pocketmine\network\mcpe\protocol\types\CacheableNbt $data,
 		string $jsonIdentifier,
 		string $instanceName,
-		BlockPosition $minBound,
-		BlockPosition $maxBound,
+		\pocketmine\network\mcpe\protocol\types\BlockPosition $minBound,
+		\pocketmine\network\mcpe\protocol\types\BlockPosition $maxBound,
 		int $dimension,
 		string $engineVersion,
 	) : self{

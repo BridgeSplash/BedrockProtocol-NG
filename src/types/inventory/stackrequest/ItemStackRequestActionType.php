@@ -40,4 +40,33 @@ final class ItemStackRequestActionType{
 	public const CRAFTING_LOOM = 17;
 	public const CRAFTING_NON_IMPLEMENTED_DEPRECATED_ASK_TY_LAING = 18;
 	public const CRAFTING_RESULTS_DEPRECATED_ASK_TY_LAING = 19; //no idea what this is for
+
+	/**
+	 * Outer type ordinals sent since 1.26.40. The constants above remain the inner (legacy) type IDs.
+	 *
+	 * @var int[]
+	 * @phpstan-var array<int, int>
+	 */
+	public const ORDINALS = [
+		self::TAKE => 0,
+		self::PLACE => 1,
+		self::SWAP => 2,
+		self::DROP => 3,
+		self::DESTROY => 4,
+		self::CRAFTING_CONSUME_INPUT => 5,
+		self::CRAFTING_CREATE_SPECIFIC_RESULT => 6,
+		self::LAB_TABLE_COMBINE => 7,
+		self::BEACON_PAYMENT => 8,
+		self::MINE_BLOCK => 9,
+		self::CRAFTING_RECIPE => 10,
+		self::CRAFTING_RECIPE_AUTO => 11, //recipe book?
+		self::CREATIVE_CREATE => 12,
+		self::CRAFTING_RECIPE_OPTIONAL => 13, //anvil/cartography table rename
+		self::CRAFTING_GRINDSTONE => 14,
+		self::CRAFTING_LOOM => 15,
+		self::CRAFTING_NON_IMPLEMENTED_DEPRECATED_ASK_TY_LAING => 16,
+		self::CRAFTING_RESULTS_DEPRECATED_ASK_TY_LAING => 17, //no idea what this is for
+		self::PLACE_INTO_BUNDLE => 18, //no longer sent since 1.26.40
+		self::TAKE_FROM_BUNDLE => 19, //no longer sent since 1.26.40
+	];
 }

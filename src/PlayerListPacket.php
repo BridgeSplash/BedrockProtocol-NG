@@ -22,6 +22,7 @@ use pmmp\encoding\VarInt;
 use pocketmine\color\Color;
 use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
 use pocketmine\network\mcpe\protocol\types\PlayerListEntry;
+use function array_search;
 use function count;
 
 class PlayerListPacket extends DataPacket implements ClientboundPacket{
@@ -29,6 +30,17 @@ class PlayerListPacket extends DataPacket implements ClientboundPacket{
 
 	public const TYPE_ADD = 0;
 	public const TYPE_REMOVE = 1;
+
+	/**
+	 * Outer type ordinals sent per entry since 1.26.40.
+	 *
+	 * @var int[]
+	 * @phpstan-var array<int, int>
+	 */
+	private const TYPE_ORDINALS = [
+		self::TYPE_REMOVE => 0,
+		self::TYPE_ADD => 1,
+	];
 
 	public int $type;
 	/** @var PlayerListEntry[] */
@@ -60,10 +72,26 @@ class PlayerListPacket extends DataPacket implements ClientboundPacket{
 	}
 
 	protected function decodePayload(ByteBufferReader $in, int $protocolId) : void{
-		$this->type = Byte::readUnsigned($in);
+		if($protocolId < ProtocolInfo::PROTOCOL_1_26_40){
+			$this->type = Byte::readUnsigned($in);
+		}
 		$count = VarInt::readUnsignedInt($in);
 		for($i = 0; $i < $count; ++$i){
 			$entry = new PlayerListEntry();
+
+			if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
+				$ordinal = VarInt::readUnsignedInt($in);
+				$type = array_search($ordinal, self::TYPE_ORDINALS, true);
+				if($type === false){
+					throw new PacketDecodeException("Unknown player list entry type ordinal $ordinal");
+				}
+				$innerType = Byte::readUnsigned($in);
+				if($innerType !== $ordinal){
+					throw new PacketDecodeException("Unexpected inner type $innerType for player list entry type ordinal $ordinal");
+				}
+				$this->type = $type;
+			}
+			$entry->type = $this->type;
 
 			if($this->type === self::TYPE_ADD){
 				$entry->uuid = CommonTypes::getUUID($in);
@@ -72,7 +100,7 @@ class PlayerListPacket extends DataPacket implements ClientboundPacket{
 				$entry->xboxUserId = CommonTypes::getString($in);
 				$entry->platformChatId = CommonTypes::getString($in);
 				$entry->buildPlatform = LE::readSignedInt($in);
-				$entry->skinData = CommonTypes::getSkin($in);
+				$entry->skinData = CommonTypes::getSkin($in, $protocolId);
 				$entry->isTeacher = CommonTypes::getBool($in);
 				$entry->isHost = CommonTypes::getBool($in);
 				if($protocolId >= ProtocolInfo::PROTOCOL_1_20_60){
@@ -87,7 +115,7 @@ class PlayerListPacket extends DataPacket implements ClientboundPacket{
 
 			$this->entries[$i] = $entry;
 		}
-		if($this->type === self::TYPE_ADD){
+		if($protocolId < ProtocolInfo::PROTOCOL_1_26_40 && $this->type === self::TYPE_ADD){
 			for($i = 0; $i < $count; ++$i){
 				$this->entries[$i]->skinData->setVerified(CommonTypes::getBool($in));
 			}
@@ -95,9 +123,17 @@ class PlayerListPacket extends DataPacket implements ClientboundPacket{
 	}
 
 	protected function encodePayload(ByteBufferWriter $out, int $protocolId) : void{
-		Byte::writeUnsigned($out, $this->type);
+		if($protocolId < ProtocolInfo::PROTOCOL_1_26_40){
+			Byte::writeUnsigned($out, $this->type);
+		}
 		VarInt::writeUnsignedInt($out, count($this->entries));
 		foreach($this->entries as $entry){
+			if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
+				$ordinal = self::TYPE_ORDINALS[$this->type];
+				VarInt::writeUnsignedInt($out, $ordinal);
+				Byte::writeUnsigned($out, $ordinal);
+			}
+
 			if($this->type === self::TYPE_ADD){
 				CommonTypes::putUUID($out, $entry->uuid);
 				CommonTypes::putActorUniqueId($out, $entry->actorUniqueId);
@@ -105,7 +141,7 @@ class PlayerListPacket extends DataPacket implements ClientboundPacket{
 				CommonTypes::putString($out, $entry->xboxUserId);
 				CommonTypes::putString($out, $entry->platformChatId);
 				LE::writeSignedInt($out, $entry->buildPlatform);
-				CommonTypes::putSkin($out, $entry->skinData);
+				CommonTypes::putSkin($out, $protocolId, $entry->skinData);
 				CommonTypes::putBool($out, $entry->isTeacher);
 				CommonTypes::putBool($out, $entry->isHost);
 				if($protocolId >= ProtocolInfo::PROTOCOL_1_20_60){
@@ -118,7 +154,7 @@ class PlayerListPacket extends DataPacket implements ClientboundPacket{
 				CommonTypes::putUUID($out, $entry->uuid);
 			}
 		}
-		if($this->type === self::TYPE_ADD){
+		if($protocolId < ProtocolInfo::PROTOCOL_1_26_40 && $this->type === self::TYPE_ADD){
 			foreach($this->entries as $entry){
 				CommonTypes::putBool($out, $entry->skinData->isVerified());
 			}

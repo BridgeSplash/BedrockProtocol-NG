@@ -99,29 +99,29 @@ class StartGamePacket extends DataPacket implements ClientboundPacket{
 		int $actorUniqueId,
 		int $actorRuntimeId,
 		int $playerGamemode,
-		Vector3 $playerPosition,
+		\pocketmine\math\Vector3 $playerPosition,
 		float $pitch,
 		float $yaw,
-		CacheableNbt $playerActorProperties,
-		LevelSettings $levelSettings,
+		\pocketmine\network\mcpe\protocol\types\CacheableNbt $playerActorProperties,
+		\pocketmine\network\mcpe\protocol\types\LevelSettings $levelSettings,
 		string $levelId,
 		string $worldName,
 		string $premiumWorldTemplateId,
 		bool $isTrial,
-		PlayerMovementSettings $playerMovementSettings,
+		\pocketmine\network\mcpe\protocol\types\PlayerMovementSettings $playerMovementSettings,
 		int $currentTick,
 		int $enchantmentSeed,
 		string $multiplayerCorrelationId,
 		bool $enableNewInventorySystem,
 		string $serverSoftwareVersion,
-		UuidInterface $worldTemplateId,
+		\Ramsey\Uuid\UuidInterface $worldTemplateId,
 		bool $enableClientSideChunkGeneration,
 		bool $blockNetworkIdsAreHashes,
 		bool $enableTickDeathSystems,
-		NetworkPermissions $networkPermissions,
+		\pocketmine\network\mcpe\protocol\types\NetworkPermissions $networkPermissions,
 		bool $isLoggingChat,
-		?ServerJoinInformation $serverJoinInformation,
-		ServerTelemetryData $serverTelemetryData,
+		?\pocketmine\network\mcpe\protocol\types\ServerJoinInformation $serverJoinInformation,
+		\pocketmine\network\mcpe\protocol\types\ServerTelemetryData $serverTelemetryData,
 		array $blockPalette,
 		int $blockPaletteChecksum,
 		array $itemTable,
@@ -211,7 +211,7 @@ class StartGamePacket extends DataPacket implements ClientboundPacket{
 		}
 		$this->networkPermissions = NetworkPermissions::decode($in);
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_0){
-			if($protocolId >= ProtocolInfo::PROTOCOL_1_26_30){
+			if($protocolId >= ProtocolInfo::PROTOCOL_1_26_30 && $protocolId < ProtocolInfo::PROTOCOL_1_26_40){
 				$this->isLoggingChat = CommonTypes::getBool($in);
 			}
 			$this->serverJoinInformation = CommonTypes::readOptional($in, fn(ByteBufferReader $in) => ServerJoinInformation::read($in, $protocolId));
@@ -268,7 +268,7 @@ class StartGamePacket extends DataPacket implements ClientboundPacket{
 		}
 		$this->networkPermissions->encode($out);
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_0){
-			if($protocolId >= ProtocolInfo::PROTOCOL_1_26_30){
+			if($protocolId >= ProtocolInfo::PROTOCOL_1_26_30 && $protocolId < ProtocolInfo::PROTOCOL_1_26_40){
 				CommonTypes::putBool($out, $this->isLoggingChat);
 			}
 			CommonTypes::writeOptional($out, $this->serverJoinInformation, fn(ByteBufferWriter $out, ServerJoinInformation $info) => $info->write($out, $protocolId));

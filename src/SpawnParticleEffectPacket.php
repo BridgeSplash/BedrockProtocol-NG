@@ -33,7 +33,7 @@ class SpawnParticleEffectPacket extends DataPacket implements ClientboundPacket{
 	/**
 	 * @generate-create-func
 	 */
-	public static function create(int $dimensionId, int $actorUniqueId, Vector3 $position, string $particleName, ?string $molangVariablesJson) : self{
+	public static function create(int $dimensionId, int $actorUniqueId, \pocketmine\math\Vector3 $position, string $particleName, ?string $molangVariablesJson) : self{
 		$result = new self;
 		$result->dimensionId = $dimensionId;
 		$result->actorUniqueId = $actorUniqueId;

@@ -59,7 +59,7 @@ class ResourcePacksInfoPacket extends DataPacket implements ClientboundPacket{
 		bool $hasScripts,
 		bool $forceServerPacks,
 		array $cdnUrls,
-		UuidInterface $worldTemplateId,
+		\Ramsey\Uuid\UuidInterface $worldTemplateId,
 		string $worldTemplateVersion,
 		bool $forceDisableVibrantVisuals,
 	) : self{
@@ -107,6 +107,13 @@ class ResourcePacksInfoPacket extends DataPacket implements ClientboundPacket{
 			$this->worldTemplateVersion = CommonTypes::getString($in);
 		}
 
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
+			for($i = 0, $count = VarInt::readUnsignedInt($in); $i < $count; ++$i){
+				$this->resourcePackEntries[] = ResourcePackInfoEntry::read($in, $protocolId);
+			}
+			return;
+		}
+
 		$resourcePackCount = LE::readUnsignedShort($in);
 		while($resourcePackCount-- > 0){
 			$this->resourcePackEntries[] = ResourcePackInfoEntry::read($in, $protocolId);
@@ -142,6 +149,14 @@ class ResourcePacksInfoPacket extends DataPacket implements ClientboundPacket{
 			CommonTypes::putUUID($out, $this->worldTemplateId);
 			CommonTypes::putString($out, $this->worldTemplateVersion);
 		}
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
+			VarInt::writeUnsignedInt($out, count($this->resourcePackEntries));
+			foreach($this->resourcePackEntries as $entry){
+				$entry->write($out, $protocolId);
+			}
+			return;
+		}
+
 		LE::writeUnsignedShort($out, count($this->resourcePackEntries));
 		foreach($this->resourcePackEntries as $entry){
 			$entry->write($out, $protocolId);

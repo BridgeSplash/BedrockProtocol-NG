@@ -32,7 +32,7 @@ class CommandRequestPacket extends DataPacket implements ServerboundPacket{
 	/**
 	 * @generate-create-func
 	 */
-	public static function create(string $command, CommandOriginData $originData, bool $isInternal, string $version, int $oldVersion) : self{
+	public static function create(string $command, \pocketmine\network\mcpe\protocol\types\command\CommandOriginData $originData, bool $isInternal, string $version, int $oldVersion) : self{
 		$result = new self;
 		$result->command = $command;
 		$result->originData = $originData;

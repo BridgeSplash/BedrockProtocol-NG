@@ -44,10 +44,10 @@ class EducationSettingsPacket extends DataPacket implements ClientboundPacket{
 		bool $disableLegacyTitleBar,
 		string $postProcessFilter,
 		string $screenshotBorderResourcePath,
-		?EducationSettingsAgentCapabilities $agentCapabilities,
+		?\pocketmine\network\mcpe\protocol\types\EducationSettingsAgentCapabilities $agentCapabilities,
 		?string $codeBuilderOverrideUri,
 		bool $hasQuiz,
-		?EducationSettingsExternalLinkSettings $linkSettings,
+		?\pocketmine\network\mcpe\protocol\types\EducationSettingsExternalLinkSettings $linkSettings,
 	) : self{
 		$result = new self;
 		$result->codeBuilderDefaultUri = $codeBuilderDefaultUri;

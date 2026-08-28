@@ -20,6 +20,9 @@ final class PersonaPieceTintColor{
 	public const PIECE_TYPE_PERSONA_HAIR = "persona_hair";
 	public const PIECE_TYPE_PERSONA_MOUTH = "persona_mouth";
 
+	/** Since 1.26.40 the color count is fixed and no longer sent */
+	public const EXPECTED_COLOR_COUNT = 4;
+
 	/**
 	 * @param string[] $colors
 	 */

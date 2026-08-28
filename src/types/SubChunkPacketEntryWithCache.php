@@ -17,6 +17,9 @@ namespace pocketmine\network\mcpe\protocol\types;
 use pmmp\encoding\ByteBufferReader;
 use pmmp\encoding\ByteBufferWriter;
 use pmmp\encoding\LE;
+use pocketmine\network\mcpe\protocol\PacketDecodeException;
+use pocketmine\network\mcpe\protocol\ProtocolInfo;
+use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
 
 final class SubChunkPacketEntryWithCache{
 
@@ -31,13 +34,22 @@ final class SubChunkPacketEntryWithCache{
 
 	public static function read(ByteBufferReader $in, int $protocolId) : self{
 		$base = SubChunkPacketEntryCommon::read($in, $protocolId, true);
-		$usedBlobHash = LE::readUnsignedLong($in);
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
+			$usedBlobHash = CommonTypes::readOptional($in, LE::readUnsignedLong(...)) ??
+				throw new PacketDecodeException("Expected a blob hash to be present when the client cache is enabled");
+		}else{
+			$usedBlobHash = LE::readUnsignedLong($in);
+		}
 
 		return new self($base, $usedBlobHash);
 	}
 
 	public function write(ByteBufferWriter $out, int $protocolId) : void{
 		$this->base->write($out, $protocolId, true);
-		LE::writeUnsignedLong($out, $this->usedBlobHash);
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
+			CommonTypes::writeOptional($out, $this->usedBlobHash, LE::writeUnsignedLong(...));
+		}else{
+			LE::writeUnsignedLong($out, $this->usedBlobHash);
+		}
 	}
 }

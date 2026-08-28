@@ -50,7 +50,7 @@ final class MultiRecipe extends RecipeWithTypeId{
 		return $this->recipeNetId;
 	}
 
-	public static function decode(int $typeId, ByteBufferReader $in) : self{
+	public static function decode(int $typeId, ByteBufferReader $in, int $protocolId) : self{
 		$uuid = CommonTypes::getUUID($in);
 		$recipeNetId = CommonTypes::readRecipeNetId($in);
 		return new self($typeId, $uuid, $recipeNetId);

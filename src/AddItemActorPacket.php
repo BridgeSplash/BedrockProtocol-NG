@@ -44,9 +44,9 @@ class AddItemActorPacket extends DataPacket implements ClientboundPacket{
 	public static function create(
 		int $actorUniqueId,
 		int $actorRuntimeId,
-		ItemStackWrapper $item,
-		Vector3 $position,
-		?Vector3 $motion,
+		\pocketmine\network\mcpe\protocol\types\inventory\ItemStackWrapper $item,
+		\pocketmine\math\Vector3 $position,
+		?\pocketmine\math\Vector3 $motion,
 		array $metadata,
 		bool $isFromFishing,
 	) : self{
@@ -64,20 +64,26 @@ class AddItemActorPacket extends DataPacket implements ClientboundPacket{
 	protected function decodePayload(ByteBufferReader $in, int $protocolId) : void{
 		$this->actorUniqueId = CommonTypes::getActorUniqueId($in);
 		$this->actorRuntimeId = CommonTypes::getActorRuntimeId($in);
-		$this->item = CommonTypes::getItemStackWrapper($in);
+		$this->item = $protocolId >= ProtocolInfo::PROTOCOL_1_26_40 ?
+			CommonTypes::getNetworkItemStackDescriptor($in, $protocolId) :
+			CommonTypes::getItemStackWrapper($in, $protocolId);
 		$this->position = CommonTypes::getVector3($in);
 		$this->motion = CommonTypes::getVector3($in);
-		$this->metadata = CommonTypes::getEntityMetadata($in);
+		$this->metadata = CommonTypes::getEntityMetadata($in, $protocolId);
 		$this->isFromFishing = CommonTypes::getBool($in);
 	}
 
 	protected function encodePayload(ByteBufferWriter $out, int $protocolId) : void{
 		CommonTypes::putActorUniqueId($out, $this->actorUniqueId);
 		CommonTypes::putActorRuntimeId($out, $this->actorRuntimeId);
-		CommonTypes::putItemStackWrapper($out, $this->item);
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
+			CommonTypes::putNetworkItemStackDescriptor($out, $protocolId, $this->item);
+		}else{
+			CommonTypes::putItemStackWrapper($out, $protocolId, $this->item);
+		}
 		CommonTypes::putVector3($out, $this->position);
 		CommonTypes::putVector3Nullable($out, $this->motion);
-		CommonTypes::putEntityMetadata($out, $this->metadata);
+		CommonTypes::putEntityMetadata($out, $protocolId, $this->metadata);
 		CommonTypes::putBool($out, $this->isFromFishing);
 	}
 

@@ -33,7 +33,7 @@ class LevelEventPacket extends DataPacket implements ClientboundPacket{
 	/**
 	 * @generate-create-func
 	 */
-	public static function create(int $eventId, int $eventData, ?Vector3 $position) : self{
+	public static function create(int $eventId, int $eventData, ?\pocketmine\math\Vector3 $position) : self{
 		$result = new self;
 		$result->eventId = $eventId;
 		$result->eventData = $eventData;
