@@ -34,99 +34,53 @@ final class SoundDataEvent{
 	){}
 
 	public static function stop() : self{
-		return new self(
-			SoundDataEventType::STOP,
-			null,
-			null,
-			null,
-			null,
-			null
-		);
+		return new self(SoundDataEventType::STOP, null, null, null, null, null);
 	}
 
 	public static function setVolume(float $volume) : self{
-		return new self(
-			SoundDataEventType::SET_VOLUME,
-			$volume,
-			null,
-			null,
-			null,
-			null
-		);
+		return new self(SoundDataEventType::SET_VOLUME, $volume, null, null, null, null);
 	}
 
 	public static function setPitch(float $pitch) : self{
-		return new self(
-			SoundDataEventType::SET_PITCH,
-			null,
-			$pitch,
-			null,
-			null,
-			null
-		);
+		return new self(SoundDataEventType::SET_PITCH, null, $pitch, null, null, null);
 	}
 
 	public static function fade(float $duration, float $targetVolume) : self{
-		return new self(
-			SoundDataEventType::FADE,
-			null,
-			null,
-			$duration,
-			$targetVolume,
-			null
-		);
+		return new self(SoundDataEventType::FADE, null, null, $duration, $targetVolume, null);
 	}
 
 	public static function seekTo(float $seconds) : self{
-		return new self(
-			SoundDataEventType::SEEK_TO,
-			null,
-			null,
-			null,
-			null,
-			$seconds
-		);
+		return new self(SoundDataEventType::SEEK_TO, null, null, null, null, $seconds);
 	}
 
 	public static function pause() : self{
-		return new self(
-			SoundDataEventType::PAUSE,
-			null,
-			null,
-			null,
-			null,
-			null
-		);
+		return new self(SoundDataEventType::PAUSE, null, null, null, null, null);
 	}
 
 	public static function resume() : self{
-		return new self(
-			SoundDataEventType::RESUME,
-			null,
-			null,
-			null,
-			null,
-			null
-		);
+		return new self(SoundDataEventType::RESUME, null, null, null, null, null);
 	}
+
+	public function getType() : SoundDataEventType{ return $this->type; }
+
+	public function getVolume() : ?float{ return $this->volume; }
+
+	public function getPitch() : ?float{ return $this->pitch; }
+
+	public function getDuration() : ?float{ return $this->duration; }
+
+	public function getTargetVolume() : ?float{ return $this->targetVolume; }
+
+	public function getSeconds() : ?float{ return $this->seconds; }
 
 	public static function read(ByteBufferReader $in) : self{
 		$type = SoundDataEventType::fromPacket(LE::readUnsignedInt($in));
 		return match($type){
 			SoundDataEventType::STOP => self::stop(),
-			SoundDataEventType::SET_VOLUME => self::setVolume(
-				volume: LE::readFloat($in)
-			),
-			SoundDataEventType::SET_PITCH => self::setPitch(
-				pitch: LE::readFloat($in)
-			),
-			SoundDataEventType::FADE => self::fade(
-				duration: LE::readFloat($in),
-				targetVolume: LE::readFloat($in)
-			),
-			SoundDataEventType::SEEK_TO => self::seekTo(
-				seconds: LE::readFloat($in)
-			),
+			SoundDataEventType::SET_VOLUME => self::setVolume(LE::readFloat($in)),
+			SoundDataEventType::SET_PITCH => self::setPitch(LE::readFloat($in)),
+			SoundDataEventType::FADE => self::fade(LE::readFloat($in), LE::readFloat($in)),
+			SoundDataEventType::SEEK_TO => self::seekTo(LE::readFloat($in)),
 			SoundDataEventType::PAUSE => self::pause(),
 			SoundDataEventType::RESUME => self::resume(),
 		};

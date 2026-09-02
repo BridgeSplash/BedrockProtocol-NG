@@ -12,15 +12,19 @@
 
 declare(strict_types=1);
 
-namespace pocketmine\network\mcpe\protocol\types\recipe;
+namespace pocketmine\network\mcpe\protocol\types;
 
-use pocketmine\network\mcpe\protocol\types\PacketIntEnumTrait;
+final class SubChunkPacketEntryWithoutCacheList{
 
-enum RecipeUnlockingContext : int{
-	use PacketIntEnumTrait;
+	/**
+	 * @param SubChunkPacketEntryWithoutCache[] $entries
+	 */
+	public function __construct(
+		private array $entries
+	){}
 
-	case NONE = 0;
-	case ALWAYS_UNLOCKED = 1;
-	case PLAYER_IN_WATER = 2;
-	case PLAYER_HAS_MANY_ITEMS = 3;
+	/**
+	 * @return SubChunkPacketEntryWithoutCache[]
+	 */
+	public function getEntries() : array{ return $this->entries; }
 }

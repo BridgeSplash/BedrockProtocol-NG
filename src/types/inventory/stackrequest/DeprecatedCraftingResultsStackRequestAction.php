@@ -24,7 +24,6 @@ use function count;
 /**
  * Not clear what this is needed for, but it is very clearly marked as deprecated, so hopefully it'll go away before I
  * have to write a proper description for it.
- * Spec name: ItemStackRequestCraftResultsDeprecatedAction
  */
 final class DeprecatedCraftingResultsStackRequestAction extends ItemStackRequestAction{
 	use GetTypeIdFromConstTrait;

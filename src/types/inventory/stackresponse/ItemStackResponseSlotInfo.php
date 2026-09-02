@@ -18,6 +18,7 @@ use pmmp\encoding\Byte;
 use pmmp\encoding\ByteBufferReader;
 use pmmp\encoding\ByteBufferWriter;
 use pmmp\encoding\VarInt;
+use pocketmine\network\mcpe\protocol\PacketDecodeException;
 use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
 
@@ -50,9 +51,16 @@ final class ItemStackResponseSlotInfo{
 		$slot = Byte::readUnsigned($in);
 		$hotbarSlot = Byte::readUnsigned($in);
 		$count = Byte::readUnsigned($in);
-		$itemStackId = $protocolId >= ProtocolInfo::PROTOCOL_1_26_40 ?
-			CommonTypes::readDoubleOptional($in, CommonTypes::readServerItemStackId(...)) :
-			CommonTypes::readServerItemStackId($in);
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
+			//the outer optional is always present
+			$dummy = Byte::readUnsigned($in);
+			if($dummy !== 1){
+				throw new PacketDecodeException("Dummy optional first byte should always be 1, got $dummy");
+			}
+			$itemStackId = CommonTypes::readOptional($in, CommonTypes::readServerItemStackId(...));
+		}else{
+			$itemStackId = CommonTypes::readServerItemStackId($in);
+		}
 		$customName = CommonTypes::getString($in);
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_21_50){
 			if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
@@ -70,7 +78,8 @@ final class ItemStackResponseSlotInfo{
 		Byte::writeUnsigned($out, $this->hotbarSlot);
 		Byte::writeUnsigned($out, $this->count);
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			CommonTypes::writeDoubleOptional($out, $this->itemStackId, CommonTypes::writeServerItemStackId(...));
+			Byte::writeUnsigned($out, 1);
+			CommonTypes::writeOptional($out, $this->itemStackId, CommonTypes::writeServerItemStackId(...));
 		}else{
 			CommonTypes::writeServerItemStackId($out, $this->itemStackId ?? throw new \InvalidArgumentException("itemStackId must be set before 1.26.40"));
 		}

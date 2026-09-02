@@ -39,7 +39,7 @@ class ResourcePackStackPacket extends DataPacket implements ClientboundPacket{
 	 * @param ResourcePackStackEntry[] $resourcePackStack
 	 * @param ResourcePackStackEntry[] $behaviorPackStack
 	 */
-	public static function create(array $resourcePackStack, array $behaviorPackStack, bool $mustAccept, string $baseGameVersion, Experiments $experiments, bool $useVanillaEditorPacks) : self{
+	public static function create(array $resourcePackStack, array $behaviorPackStack, bool $mustAccept, string $baseGameVersion, \pocketmine\network\mcpe\protocol\types\Experiments $experiments, bool $useVanillaEditorPacks) : self{
 		$result = new self;
 		$result->resourcePackStack = $resourcePackStack;
 		$result->behaviorPackStack = $behaviorPackStack;

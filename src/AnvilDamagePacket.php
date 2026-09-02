@@ -29,7 +29,7 @@ class AnvilDamagePacket extends DataPacket implements ServerboundPacket{
 	/**
 	 * @generate-create-func
 	 */
-	public static function create(BlockPosition $blockPosition, int $damageAmount) : self{
+	public static function create(\pocketmine\network\mcpe\protocol\types\BlockPosition $blockPosition, int $damageAmount) : self{
 		$result = new self;
 		$result->blockPosition = $blockPosition;
 		$result->damageAmount = $damageAmount;

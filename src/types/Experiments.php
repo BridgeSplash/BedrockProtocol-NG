@@ -17,7 +17,6 @@ namespace pocketmine\network\mcpe\protocol\types;
 use pmmp\encoding\ByteBufferReader;
 use pmmp\encoding\ByteBufferWriter;
 use pmmp\encoding\LE;
-use pocketmine\network\mcpe\protocol\PacketDecodeException;
 use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
 use function count;
 
@@ -40,9 +39,6 @@ final class Experiments{
 		$experiments = [];
 		for($i = 0, $len = LE::readUnsignedInt($in); $i < $len; ++$i){
 			$experimentName = CommonTypes::getString($in);
-			if(isset($experiments[$experimentName])){
-				throw new PacketDecodeException("Duplicate experiment name $experimentName");
-			}
 			$enabled = CommonTypes::getBool($in);
 			$experiments[$experimentName] = $enabled;
 		}

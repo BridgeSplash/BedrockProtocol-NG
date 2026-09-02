@@ -21,6 +21,7 @@ use Ramsey\Uuid\UuidInterface;
 
 class PlayerListEntry{
 
+	/** @see PlayerListPacket::TYPE_ADD, PlayerListPacket::TYPE_REMOVE */
 	public int $type;
 	public UuidInterface $uuid;
 	public int $actorUniqueId;

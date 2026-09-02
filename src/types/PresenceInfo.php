@@ -24,16 +24,16 @@ use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
  */
 final class PresenceInfo{
 	public function __construct(
-		private ?string $richPresenceId,
-		private ?string $experienceName = null,
-		private ?string $worldName = null
+		private ?string $experienceName,
+		private ?string $worldName,
+		private ?string $richPresenceId
 	){}
-
-	public function getRichPresenceId() : ?string{ return $this->richPresenceId; }
 
 	public function getExperienceName() : ?string{ return $this->experienceName; }
 
 	public function getWorldName() : ?string{ return $this->worldName; }
+
+	public function getRichPresenceId() : ?string{ return $this->richPresenceId; }
 
 	public static function read(ByteBufferReader $in, int $protocolId) : self{
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
@@ -47,7 +47,7 @@ final class PresenceInfo{
 			$worldName = CommonTypes::getString($in);
 		}
 
-		return new self($richPresenceId ?? null, $experienceName ?? null, $worldName ?? null);
+		return new self($experienceName ?? null, $worldName ?? null, $richPresenceId ?? null);
 	}
 
 	public function write(ByteBufferWriter $out, int $protocolId) : void{

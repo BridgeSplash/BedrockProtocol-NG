@@ -32,7 +32,7 @@ class PlayerLocationPacket extends DataPacket implements ClientboundPacket{
 	/**
 	 * @generate-create-func
 	 */
-	private static function create(PlayerLocationType $type, int $actorUniqueId, ?Vector3 $position) : self{
+	private static function create(\pocketmine\network\mcpe\protocol\types\PlayerLocationType $type, int $actorUniqueId, ?\pocketmine\math\Vector3 $position) : self{
 		$result = new self;
 		$result->type = $type;
 		$result->actorUniqueId = $actorUniqueId;

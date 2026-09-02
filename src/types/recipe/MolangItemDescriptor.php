@@ -20,17 +20,17 @@ use pmmp\encoding\ByteBufferWriter;
 use pmmp\encoding\LE;
 use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
+use pocketmine\network\mcpe\protocol\types\GetTypeIdFromConstTrait;
 
 final class MolangItemDescriptor implements ItemDescriptor{
+	use GetTypeIdFromConstTrait;
+
+	public const ID = ItemDescriptorType::MOLANG;
 
 	public function __construct(
 		private string $molangExpression,
 		private int $molangVersion
 	){}
-
-	public function getDescriptorType() : ItemDescriptorType{
-		return ItemDescriptorType::MOLANG;
-	}
 
 	public function getMolangExpression() : string{ return $this->molangExpression; }
 

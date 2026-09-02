@@ -23,12 +23,9 @@ use function count;
 final class SerializableVoxelShape{
 
 	/**
-	 * @param float[] $xCoordinates
-	 * @param float[] $yCoordinates
-	 * @param float[] $zCoordinates
-	 * @phpstan-param list<float> $xCoordinates
-	 * @phpstan-param list<float> $yCoordinates
-	 * @phpstan-param list<float> $zCoordinates
+	 * @param list<float> $xCoordinates
+	 * @param list<float> $yCoordinates
+	 * @param list<float> $zCoordinates
 	 */
 	public function __construct(
 		private SerializableVoxelCells $cells,
@@ -40,20 +37,17 @@ final class SerializableVoxelShape{
 	public function getCells() : SerializableVoxelCells{ return $this->cells; }
 
 	/**
-	 * @return float[]
-	 * @phpstan-return list<float>
+	 * @return list<float>
 	 */
 	public function getXCoordinates() : array{ return $this->xCoordinates; }
 
 	/**
-	 * @return float[]
-	 * @phpstan-return list<float>
+	 * @return list<float>
 	 */
 	public function getYCoordinates() : array{ return $this->yCoordinates; }
 
 	/**
-	 * @return float[]
-	 * @phpstan-return list<float>
+	 * @return list<float>
 	 */
 	public function getZCoordinates() : array{ return $this->zCoordinates; }
 

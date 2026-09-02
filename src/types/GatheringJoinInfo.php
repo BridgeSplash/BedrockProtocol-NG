@@ -21,9 +21,6 @@ use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
 use Ramsey\Uuid\Uuid;
 use Ramsey\Uuid\UuidInterface;
 
-/**
- * Spec name: gatheringsConfig
- */
 final class GatheringJoinInfo{
 
 	public function __construct(
@@ -93,8 +90,8 @@ final class GatheringJoinInfo{
 			CommonTypes::writeOptional($out, $this->experienceWorldId, CommonTypes::putUUID(...));
 			CommonTypes::writeOptional($out, $this->experienceWorldName, CommonTypes::putString(...));
 		}else{
-			CommonTypes::putUUID($out, $this->experienceWorldId ?? throw new \InvalidArgumentException("experienceWorldId must be set"));
-			CommonTypes::putString($out, $this->experienceWorldName ?? throw new \InvalidArgumentException("experienceWorldName must be set"));
+			CommonTypes::putUUID($out, $this->experienceWorldId ?? throw new \InvalidArgumentException("experienceWorldId must be set before 1.26.40"));
+			CommonTypes::putString($out, $this->experienceWorldName ?? throw new \InvalidArgumentException("experienceWorldName must be set before 1.26.40"));
 		}
 		CommonTypes::putString($out, $this->creatorId);
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){

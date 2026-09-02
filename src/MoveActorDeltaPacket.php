@@ -40,8 +40,9 @@ class MoveActorDeltaPacket extends DataPacket implements ClientboundPacket{
 	public ?float $yaw = null;
 	public ?float $headYaw = null;
 	public bool $onGround = false;
-	public bool $teleport = false; //force move in the docs
-	public bool $forceMoveLocalEntity = false; //force move local entity in the docs
+	public bool $teleport = false;
+	public bool $forceMoveLocalEntity = false;
+	/** >= ProtocolInfo::PROTOCOL_1_26_40 */
 	public bool $forceCompletion = false;
 
 	/**
@@ -116,37 +117,38 @@ class MoveActorDeltaPacket extends DataPacket implements ClientboundPacket{
 			CommonTypes::putBool($out, $this->teleport);
 			CommonTypes::putBool($out, $this->forceMoveLocalEntity);
 			CommonTypes::putBool($out, $this->forceCompletion);
-		}else{
-			$flags = 0;
-			$flags |= $this->xPos !== null ? self::FLAG_HAS_X : 0;
-			$flags |= $this->yPos !== null ? self::FLAG_HAS_Y : 0;
-			$flags |= $this->zPos !== null ? self::FLAG_HAS_Z : 0;
-			$flags |= $this->pitch !== null ? self::FLAG_HAS_PITCH : 0;
-			$flags |= $this->yaw !== null ? self::FLAG_HAS_YAW : 0;
-			$flags |= $this->headYaw !== null ? self::FLAG_HAS_HEAD_YAW : 0;
-			$flags |= $this->onGround ? self::FLAG_GROUND : 0;
-			$flags |= $this->teleport ? self::FLAG_TELEPORT : 0;
-			$flags |= $this->forceMoveLocalEntity ? self::FLAG_FORCE_MOVE_LOCAL_ENTITY : 0;
+			return;
+		}
 
-			LE::writeUnsignedShort($out, $flags);
-			if($this->xPos !== null){
-				LE::writeFloat($out, $this->xPos);
-			}
-			if($this->yPos !== null){
-				LE::writeFloat($out, $this->yPos);
-			}
-			if($this->zPos !== null){
-				LE::writeFloat($out, $this->zPos);
-			}
-			if($this->pitch !== null){
-				CommonTypes::putRotationByte($out, $this->pitch);
-			}
-			if($this->yaw !== null){
-				CommonTypes::putRotationByte($out, $this->yaw);
-			}
-			if($this->headYaw !== null){
-				CommonTypes::putRotationByte($out, $this->headYaw);
-			}
+		$flags = 0;
+		$flags |= $this->xPos !== null ? self::FLAG_HAS_X : 0;
+		$flags |= $this->yPos !== null ? self::FLAG_HAS_Y : 0;
+		$flags |= $this->zPos !== null ? self::FLAG_HAS_Z : 0;
+		$flags |= $this->pitch !== null ? self::FLAG_HAS_PITCH : 0;
+		$flags |= $this->yaw !== null ? self::FLAG_HAS_YAW : 0;
+		$flags |= $this->headYaw !== null ? self::FLAG_HAS_HEAD_YAW : 0;
+		$flags |= $this->onGround ? self::FLAG_GROUND : 0;
+		$flags |= $this->teleport ? self::FLAG_TELEPORT : 0;
+		$flags |= $this->forceMoveLocalEntity ? self::FLAG_FORCE_MOVE_LOCAL_ENTITY : 0;
+
+		LE::writeUnsignedShort($out, $flags);
+		if($this->xPos !== null){
+			LE::writeFloat($out, $this->xPos);
+		}
+		if($this->yPos !== null){
+			LE::writeFloat($out, $this->yPos);
+		}
+		if($this->zPos !== null){
+			LE::writeFloat($out, $this->zPos);
+		}
+		if($this->pitch !== null){
+			CommonTypes::putRotationByte($out, $this->pitch);
+		}
+		if($this->yaw !== null){
+			CommonTypes::putRotationByte($out, $this->yaw);
+		}
+		if($this->headYaw !== null){
+			CommonTypes::putRotationByte($out, $this->headYaw);
 		}
 	}
 

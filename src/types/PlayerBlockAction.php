@@ -48,6 +48,7 @@ final class PlayerBlockAction{
 			throw new PacketDecodeException("Invalid action type for " . self::class);
 		}
 		if($protocolId < ProtocolInfo::PROTOCOL_1_26_40 && $actionType === PlayerAction::STOP_BREAK){
+			//the block info wasn't sent for this action before 1.26.40
 			return new self($actionType, new BlockPosition(0, 0, 0), 0);
 		}
 		$blockPosition = CommonTypes::getBlockPosition($in);
@@ -66,7 +67,7 @@ final class PlayerBlockAction{
 
 	public static function isValidActionType(int $actionType) : bool{
 		return match($actionType){
-			PlayerAction::STOP_BREAK, //only in 1.26.40+
+			PlayerAction::STOP_BREAK,
 			PlayerAction::ABORT_BREAK,
 			PlayerAction::START_BREAK,
 			PlayerAction::CRACK_BREAK,

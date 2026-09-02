@@ -31,7 +31,7 @@ class TransferPacket extends DataPacket implements ClientboundPacket{
 	/**
 	 * @generate-create-func
 	 */
-	public static function create(string $address, int $port, bool $reloadWorld, ?GatheringJoinInfo $gatheringsConfig) : self{
+	public static function create(string $address, int $port, bool $reloadWorld, ?\pocketmine\network\mcpe\protocol\types\GatheringJoinInfo $gatheringsConfig) : self{
 		$result = new self;
 		$result->address = $address;
 		$result->port = $port;

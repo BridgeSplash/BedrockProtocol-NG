@@ -19,8 +19,12 @@ use pmmp\encoding\ByteBufferWriter;
 use pmmp\encoding\VarInt;
 use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
+use pocketmine\network\mcpe\protocol\types\GetTypeIdFromConstTrait;
 
 final class TagItemDescriptor implements ItemDescriptor{
+	use GetTypeIdFromConstTrait;
+
+	public const ID = ItemDescriptorType::TAG;
 
 	//used to indicate that the item has multiple selectable variants
 	private const DEFAULT_META = 32767;
@@ -29,10 +33,6 @@ final class TagItemDescriptor implements ItemDescriptor{
 		private string $tag,
 		private int $meta = self::DEFAULT_META
 	){}
-
-	public function getDescriptorType() : ItemDescriptorType{
-		return ItemDescriptorType::TAG;
-	}
 
 	public function getTag() : string{ return $this->tag; }
 

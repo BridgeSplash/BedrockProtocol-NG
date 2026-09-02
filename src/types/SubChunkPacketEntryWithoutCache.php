@@ -12,36 +12,36 @@
 
 declare(strict_types=1);
 
-namespace pocketmine\network\mcpe\protocol\types\inventory;
+namespace pocketmine\network\mcpe\protocol\types;
 
 use pmmp\encoding\ByteBufferReader;
 use pmmp\encoding\ByteBufferWriter;
 use pmmp\encoding\LE;
+use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
 
-final class CreativeGroupEntry{
+final class SubChunkPacketEntryWithoutCache{
+
 	public function __construct(
-		private int $categoryId,
-		private string $categoryName,
-		private ItemStack $icon
+		private SubChunkPacketEntryCommon $base
 	){}
 
-	public function getCategoryId() : int{ return $this->categoryId; }
-
-	public function getCategoryName() : string{ return $this->categoryName; }
-
-	public function getIcon() : ItemStack{ return $this->icon; }
+	public function getBase() : SubChunkPacketEntryCommon{ return $this->base; }
 
 	public static function read(ByteBufferReader $in, int $protocolId) : self{
-		$categoryId = LE::readSignedInt($in);
-		$categoryName = CommonTypes::getString($in);
-		$icon = CommonTypes::getItemStackWithoutStackId($in, $protocolId);
-		return new self($categoryId, $categoryName, $icon);
+		$base = SubChunkPacketEntryCommon::read($in, $protocolId, false);
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
+			//the blob hash optional is present in the payload even when the client cache is disabled
+			CommonTypes::readOptional($in, LE::readUnsignedLong(...));
+		}
+
+		return new self($base);
 	}
 
 	public function write(ByteBufferWriter $out, int $protocolId) : void{
-		LE::writeSignedInt($out, $this->categoryId);
-		CommonTypes::putString($out, $this->categoryName);
-		CommonTypes::putItemStackWithoutStackId($out, $protocolId, $this->icon);
+		$this->base->write($out, $protocolId, false);
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
+			CommonTypes::putBool($out, false);
+		}
 	}
 }

@@ -21,9 +21,6 @@ use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
 use Ramsey\Uuid\UuidInterface;
 
-/**
- * Spec name: DimensionDefinition
- */
 final class DimensionData{
 
 	public function __construct(
@@ -51,6 +48,7 @@ final class DimensionData{
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_20){
 			$dimensionType = VarInt::readSignedInt($in);
 		}
+
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
 			$packId = CommonTypes::getUUID($in);
 		}
@@ -66,7 +64,7 @@ final class DimensionData{
 			VarInt::writeSignedInt($out, $this->dimensionType);
 		}
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			CommonTypes::putUUID($out, $this->packId ?? throw new \InvalidArgumentException("packId must be set"));
+			CommonTypes::putUUID($out, $this->packId ?? throw new \InvalidArgumentException("packId must be set since 1.26.40"));
 		}
 	}
 }

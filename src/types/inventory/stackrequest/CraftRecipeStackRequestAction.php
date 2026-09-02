@@ -23,7 +23,6 @@ use pocketmine\network\mcpe\protocol\types\GetTypeIdFromConstTrait;
 
 /**
  * Tells that the current transaction crafted the specified recipe.
- * Spec name: ItemStackRequestCraftRecipeAction
  */
 final class CraftRecipeStackRequestAction extends ItemStackRequestAction{
 	use GetTypeIdFromConstTrait;

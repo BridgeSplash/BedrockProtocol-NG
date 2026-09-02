@@ -24,7 +24,7 @@ use pocketmine\network\mcpe\protocol\types\inventory\ItemStack;
 use Ramsey\Uuid\UuidInterface;
 use function count;
 
-final class ShapedRecipe{
+final class ShapedRecipe extends RecipeWithTypeId{
 	private string $blockName;
 
 	/**
@@ -34,6 +34,7 @@ final class ShapedRecipe{
 	 * @phpstan-param list<ItemStack> $output
 	 */
 	public function __construct(
+		int $typeId,
 		private string $recipeId,
 		private array $input,
 		private array $output,
@@ -41,9 +42,10 @@ final class ShapedRecipe{
 		string $blockType, //TODO: rename this
 		private int $priority,
 		private bool $symmetric,
-		private ?RecipeUnlockingRequirement $unlockingRequirement,
+		private RecipeUnlockingRequirement $unlockingRequirement,
 		private int $recipeNetId
 	){
+		parent::__construct($typeId);
 		$rows = count($input);
 		if($rows < 1 or $rows > 3){
 			throw new \InvalidArgumentException("Expected 1, 2 or 3 input rows");
@@ -101,13 +103,13 @@ final class ShapedRecipe{
 
 	public function isSymmetric() : bool{ return $this->symmetric; }
 
-	public function getUnlockingRequirement() : ?RecipeUnlockingRequirement{ return $this->unlockingRequirement; }
+	public function getUnlockingRequirement() : RecipeUnlockingRequirement{ return $this->unlockingRequirement; }
 
 	public function getRecipeNetId() : int{
 		return $this->recipeNetId;
 	}
 
-	public static function decode(ByteBufferReader $in, int $protocolId) : self{
+	public static function decode(int $recipeType, ByteBufferReader $in, int $protocolId) : self{
 		$recipeId = CommonTypes::getString($in);
 		$width = VarInt::readSignedInt($in);
 		$height = VarInt::readSignedInt($in);
@@ -144,7 +146,7 @@ final class ShapedRecipe{
 
 		$recipeNetId = CommonTypes::readRecipeNetId($in);
 
-		return new self($recipeId, $input, $output, $uuid, $block, $priority, $symmetric ?? true, $unlockingRequirement ?? null, $recipeNetId);
+		return new self($recipeType, $recipeId, $input, $output, $uuid, $block, $priority, $symmetric ?? true, $unlockingRequirement ?? new RecipeUnlockingRequirement(null), $recipeNetId);
 	}
 
 	public function encode(ByteBufferWriter $out, int $protocolId) : void{
@@ -170,12 +172,12 @@ final class ShapedRecipe{
 		VarInt::writeSignedInt($out, $this->priority);
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
 			CommonTypes::putBool($out, $this->symmetric);
-			CommonTypes::writeOptional($out, $this->unlockingRequirement, fn(ByteBufferWriter $out, RecipeUnlockingRequirement $data) => $data->write($out, $protocolId));
+			CommonTypes::writeOptional($out, $this->unlockingRequirement, fn(ByteBufferWriter $out, RecipeUnlockingRequirement $v) => $v->write($out, $protocolId));
 		}elseif($protocolId >= ProtocolInfo::PROTOCOL_1_20_80){
 			CommonTypes::putBool($out, $this->symmetric);
 
 			if($protocolId >= ProtocolInfo::PROTOCOL_1_21_0){
-				($this->unlockingRequirement ?? new RecipeUnlockingRequirement(RecipeUnlockingContext::NONE, null))->write($out, $protocolId);
+				$this->unlockingRequirement->write($out, $protocolId);
 			}
 		}
 

@@ -31,7 +31,7 @@ class PlayerSkinPacket extends DataPacket implements ClientboundPacket, Serverbo
 	/**
 	 * @generate-create-func
 	 */
-	public static function create(UuidInterface $uuid, string $oldSkinName, string $newSkinName, SkinData $skin) : self{
+	public static function create(\Ramsey\Uuid\UuidInterface $uuid, string $oldSkinName, string $newSkinName, \pocketmine\network\mcpe\protocol\types\skin\SkinData $skin) : self{
 		$result = new self;
 		$result->uuid = $uuid;
 		$result->oldSkinName = $oldSkinName;

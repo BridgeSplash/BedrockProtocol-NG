@@ -34,7 +34,7 @@ class PlayerActionPacket extends DataPacket implements ClientboundPacket, Server
 	/**
 	 * @generate-create-func
 	 */
-	public static function create(int $actorRuntimeId, int $action, BlockPosition $blockPosition, BlockPosition $resultPosition, int $face) : self{
+	public static function create(int $actorRuntimeId, int $action, \pocketmine\network\mcpe\protocol\types\BlockPosition $blockPosition, \pocketmine\network\mcpe\protocol\types\BlockPosition $resultPosition, int $face) : self{
 		$result = new self;
 		$result->actorRuntimeId = $actorRuntimeId;
 		$result->action = $action;

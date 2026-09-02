@@ -22,7 +22,6 @@ use pocketmine\network\mcpe\protocol\types\GetTypeIdFromConstTrait;
 
 /**
  * Renames an item in an anvil, or map on a cartography table.
- * Spec name: ItemStackRequestCraftRecipeOptionalAction
  */
 final class CraftRecipeOptionalStackRequestAction extends ItemStackRequestAction{
 	use GetTypeIdFromConstTrait;

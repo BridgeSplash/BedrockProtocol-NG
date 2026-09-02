@@ -34,7 +34,7 @@ class RespawnPacket extends DataPacket implements ClientboundPacket, Serverbound
 	/**
 	 * @generate-create-func
 	 */
-	public static function create(Vector3 $position, int $respawnState, int $actorRuntimeId) : self{
+	public static function create(\pocketmine\math\Vector3 $position, int $respawnState, int $actorRuntimeId) : self{
 		$result = new self;
 		$result->position = $position;
 		$result->respawnState = $respawnState;

@@ -17,6 +17,7 @@ namespace pocketmine\network\mcpe\protocol\types\inventory\stackrequest;
 use pmmp\encoding\Byte;
 use pmmp\encoding\ByteBufferReader;
 use pmmp\encoding\ByteBufferWriter;
+use pmmp\encoding\VarInt;
 use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
 use pocketmine\network\mcpe\protocol\types\GetTypeIdFromConstTrait;
@@ -26,7 +27,6 @@ use function count;
 /**
  * Tells that the current transaction crafted the specified recipe, using the recipe book. This is effectively the same
  * as the regular crafting result action.
- * Spec name: ItemStackRequestCraftRecipeAutoAction
  */
 final class CraftRecipeAutoStackRequestAction extends ItemStackRequestAction{
 	use GetTypeIdFromConstTrait;
@@ -60,14 +60,17 @@ final class CraftRecipeAutoStackRequestAction extends ItemStackRequestAction{
 		$recipeId = CommonTypes::readRecipeNetId($in);
 		$repetitions = Byte::readUnsigned($in);
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			$ingredients = CommonTypes::readList($in, fn(ByteBufferReader $in) => CommonTypes::readStackRequestIngredient($in, $protocolId));
+			$ingredients = [];
+			for($i = 0, $count = VarInt::readUnsignedInt($in); $i < $count; ++$i){
+				$ingredients[] = CommonTypes::getStackRequestIngredient($in, $protocolId);
+			}
 		}else{
 			if($protocolId >= ProtocolInfo::PROTOCOL_1_21_20){
 				$repetitions2 = Byte::readUnsigned($in); //repetitions property is sent twice, mojang...
 			}
 			$ingredients = [];
 			for($i = 0, $count = Byte::readUnsigned($in); $i < $count; ++$i){
-				$ingredients[] = CommonTypes::readStackRequestIngredient($in, $protocolId);
+				$ingredients[] = CommonTypes::getStackRequestIngredient($in, $protocolId);
 			}
 		}
 		return new self($recipeId, $repetitions, $repetitions2 ?? 0, $ingredients);
@@ -77,14 +80,17 @@ final class CraftRecipeAutoStackRequestAction extends ItemStackRequestAction{
 		CommonTypes::writeRecipeNetId($out, $this->recipeId);
 		Byte::writeUnsigned($out, $this->repetitions);
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			CommonTypes::writeList($out, $this->ingredients, fn(ByteBufferWriter $out, RecipeIngredient $ingredient) => CommonTypes::writeStackRequestIngredient($out, $protocolId, $ingredient));
+			VarInt::writeUnsignedInt($out, count($this->ingredients));
+			foreach($this->ingredients as $ingredient){
+				CommonTypes::putStackRequestIngredient($out, $protocolId, $ingredient);
+			}
 		}else{
 			if($protocolId >= ProtocolInfo::PROTOCOL_1_21_20){
 				Byte::writeUnsigned($out, $this->repetitions2);
 			}
 			Byte::writeUnsigned($out, count($this->ingredients));
 			foreach($this->ingredients as $ingredient){
-				CommonTypes::writeStackRequestIngredient($out, $protocolId, $ingredient);
+				CommonTypes::putStackRequestIngredient($out, $protocolId, $ingredient);
 			}
 		}
 	}

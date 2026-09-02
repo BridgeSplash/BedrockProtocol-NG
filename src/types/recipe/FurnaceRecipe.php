@@ -21,17 +21,15 @@ use pocketmine\network\mcpe\protocol\CraftingDataPacket;
 use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
 use pocketmine\network\mcpe\protocol\types\inventory\ItemStack;
 
-final class FurnaceRecipe{
+final class FurnaceRecipe extends RecipeWithTypeId{
 	public function __construct(
-		private int $typeId,
+		int $typeId,
 		private int $inputId,
 		private ?int $inputMeta,
 		private ItemStack $result,
 		private string $blockName
-	){}
-
-	public function getTypeId() : int{
-		return $this->typeId;
+	){
+		parent::__construct($typeId);
 	}
 
 	public function getInputId() : int{

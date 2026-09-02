@@ -18,7 +18,6 @@ use pocketmine\network\mcpe\protocol\types\GetTypeIdFromConstTrait;
 
 /**
  * Sends some (or all) items from the source slot to the magic place where crafting ingredients turn into result items.
- * Spec name: ItemStackRequestConsumeAction
  */
 final class CraftingConsumeInputStackRequestAction extends ItemStackRequestAction{
 	use DisappearStackRequestActionTrait;

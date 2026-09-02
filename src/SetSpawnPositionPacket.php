@@ -40,7 +40,7 @@ class SetSpawnPositionPacket extends DataPacket implements ClientboundPacket{
 	/**
 	 * @generate-create-func
 	 */
-	private static function create(int $spawnType, BlockPosition $spawnPosition, int $dimension, BlockPosition $causingBlockPosition) : self{
+	private static function create(int $spawnType, \pocketmine\network\mcpe\protocol\types\BlockPosition $spawnPosition, int $dimension, \pocketmine\network\mcpe\protocol\types\BlockPosition $causingBlockPosition) : self{
 		$result = new self;
 		$result->spawnType = $spawnType;
 		$result->spawnPosition = $spawnPosition;

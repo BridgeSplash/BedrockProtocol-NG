@@ -42,10 +42,9 @@ final class MapImage{
 	 * @phpstan-var list<list<Color>>
 	 */
 	private array $pixels;
-
 	/**
 	 * @var string[]
-	 * @phpstan-var array<self::PIXEL_FORMAT_*, string>
+	 * @phpstan-var array<int, string>
 	 */
 	private array $encodedPixelCache = [];
 
@@ -95,6 +94,7 @@ final class MapImage{
 					if($format === self::PIXEL_FORMAT_NEW){
 						BE::writeSignedInt($serializer, $this->pixels[$y][$x]->toRGBA());
 					}else{
+						//if mojang had any sense this would just be a regular LE int
 						VarInt::writeUnsignedInt($serializer, Binary::flipIntEndianness($this->pixels[$y][$x]->toRGBA()));
 					}
 				}

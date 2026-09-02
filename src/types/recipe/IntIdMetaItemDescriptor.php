@@ -17,11 +17,15 @@ namespace pocketmine\network\mcpe\protocol\types\recipe;
 use pmmp\encoding\ByteBufferReader;
 use pmmp\encoding\ByteBufferWriter;
 use pmmp\encoding\LE;
+use pocketmine\network\mcpe\protocol\types\GetTypeIdFromConstTrait;
 
 /**
  * No longer sent since 1.26.40.
  */
 final class IntIdMetaItemDescriptor implements ItemDescriptor{
+	use GetTypeIdFromConstTrait;
+
+	public const ID = ItemDescriptorType::INT_ID_META;
 
 	public function __construct(
 		private int $id,
@@ -30,10 +34,6 @@ final class IntIdMetaItemDescriptor implements ItemDescriptor{
 		if($id === 0 && $meta !== 0){
 			throw new \InvalidArgumentException("Meta cannot be non-zero for air");
 		}
-	}
-
-	public function getDescriptorType() : ItemDescriptorType{
-		return ItemDescriptorType::INT_ID_META;
 	}
 
 	public function getId() : int{ return $this->id; }

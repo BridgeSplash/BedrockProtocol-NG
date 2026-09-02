@@ -38,7 +38,7 @@ class SetActorDataPacket extends DataPacket implements ClientboundPacket, Server
 	 * @param MetadataProperty[] $metadata
 	 * @phpstan-param array<int, MetadataProperty> $metadata
 	 */
-	public static function create(int $actorRuntimeId, array $metadata, PropertySyncData $syncedProperties, int $tick) : self{
+	public static function create(int $actorRuntimeId, array $metadata, \pocketmine\network\mcpe\protocol\types\entity\PropertySyncData $syncedProperties, int $tick) : self{
 		$result = new self;
 		$result->actorRuntimeId = $actorRuntimeId;
 		$result->metadata = $metadata;

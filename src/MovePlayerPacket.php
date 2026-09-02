@@ -37,24 +37,24 @@ class MovePlayerPacket extends DataPacket implements ClientboundPacket, Serverbo
 	public float $yaw;
 	public float $headYaw;
 	public int $mode = self::MODE_NORMAL;
-	public bool $onGround = false;
+	public bool $onGround = false; //TODO
 	public int $ridingActorRuntimeId = 0;
-	public ?MovePlayerTeleportData $telemetryData;
+	public ?MovePlayerTeleportData $telemetryData = null;
 	public int $tick = 0;
 
 	/**
 	 * @generate-create-func
 	 */
-	private static function internalCreate(
+	public static function create(
 		int $actorRuntimeId,
-		Vector3 $position,
+		\pocketmine\math\Vector3 $position,
 		float $pitch,
 		float $yaw,
 		float $headYaw,
 		int $mode,
 		bool $onGround,
 		int $ridingActorRuntimeId,
-		?MovePlayerTeleportData $telemetryData,
+		?\pocketmine\network\mcpe\protocol\types\MovePlayerTeleportData $telemetryData,
 		int $tick,
 	) : self{
 		$result = new self;
@@ -69,24 +69,6 @@ class MovePlayerPacket extends DataPacket implements ClientboundPacket, Serverbo
 		$result->telemetryData = $telemetryData;
 		$result->tick = $tick;
 		return $result;
-	}
-
-	public static function create(
-		int $actorRuntimeId,
-		Vector3 $position,
-		float $pitch,
-		float $yaw,
-		float $headYaw,
-		int $mode,
-		bool $onGround,
-		int $ridingActorRuntimeId,
-		?MovePlayerTeleportData $telemetryData,
-		int $tick,
-	) : self{
-		if($mode === self::MODE_TELEPORT && $telemetryData === null){
-			throw new \InvalidArgumentException("telemetryData must be provided when mode is MODE_TELEPORT");
-		}
-		return self::internalCreate($actorRuntimeId, $position, $pitch, $yaw, $headYaw, $mode, $onGround, $ridingActorRuntimeId, $telemetryData, $tick);
 	}
 
 	public static function simple(
@@ -125,7 +107,7 @@ class MovePlayerPacket extends DataPacket implements ClientboundPacket, Serverbo
 		CommonTypes::putVector3($out, $this->position);
 		LE::writeFloat($out, $this->pitch);
 		LE::writeFloat($out, $this->yaw);
-		LE::writeFloat($out, $this->headYaw);
+		LE::writeFloat($out, $this->headYaw); //TODO
 		Byte::writeUnsigned($out, $this->mode);
 		CommonTypes::putBool($out, $this->onGround);
 		CommonTypes::putActorRuntimeId($out, $this->ridingActorRuntimeId);

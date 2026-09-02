@@ -25,7 +25,6 @@ use pocketmine\network\mcpe\protocol\types\GetTypeIdFromConstTrait;
 
 /**
  * Repair and/or remove enchantments from an item in a grindstone.
- * Spec name: ItemStackRequestCraftRepairAndDisenchantAction
  */
 final class GrindstoneStackRequestAction extends ItemStackRequestAction{
 	use GetTypeIdFromConstTrait;

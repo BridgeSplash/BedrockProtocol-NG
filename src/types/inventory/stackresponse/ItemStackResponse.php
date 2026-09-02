@@ -17,12 +17,12 @@ namespace pocketmine\network\mcpe\protocol\types\inventory\stackresponse;
 use pmmp\encoding\Byte;
 use pmmp\encoding\ByteBufferReader;
 use pmmp\encoding\ByteBufferWriter;
+use pmmp\encoding\VarInt;
+use pocketmine\network\mcpe\protocol\PacketDecodeException;
 use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
+use function count;
 
-/**
- * Spec name: ItemStackResponseInfo
- */
 final class ItemStackResponse{
 
 	public const RESULT_OK = 0;
@@ -32,15 +32,14 @@ final class ItemStackResponse{
 
 	/**
 	 * @param ItemStackResponseContainerInfo[]|null $containerInfos
-	 * @phpstan-param list<ItemStackResponseContainerInfo>|null $containerInfos
 	 */
 	public function __construct(
 		private int $result,
 		private int $requestId,
-		private ?array $containerInfos
+		private ?array $containerInfos = null
 	){
-		if($this->result !== self::RESULT_OK && $this->containerInfos !== null){
-			throw new \InvalidArgumentException("Container infos must be null if rejecting the request");
+		if($this->result !== self::RESULT_OK && $this->containerInfos !== null && count($this->containerInfos) !== 0){
+			throw new \InvalidArgumentException("Container infos must be empty if rejecting the request");
 		}
 	}
 
@@ -48,21 +47,28 @@ final class ItemStackResponse{
 
 	public function getRequestId() : int{ return $this->requestId; }
 
-	/**
-	 * @return ItemStackResponseContainerInfo[]|null
-	 * @phpstan-return list<ItemStackResponseContainerInfo>|null
-	 */
+	/** @return ItemStackResponseContainerInfo[]|null */
 	public function getContainerInfos() : ?array{ return $this->containerInfos; }
 
 	public static function read(ByteBufferReader $in, int $protocolId) : self{
 		$result = Byte::readUnsigned($in);
 		$requestId = CommonTypes::readItemStackRequestId($in);
+		$readContainerInfos = static function(ByteBufferReader $in) use ($protocolId) : array{
+			$containerInfos = [];
+			for($i = 0, $len = VarInt::readUnsignedInt($in); $i < $len; ++$i){
+				$containerInfos[] = ItemStackResponseContainerInfo::read($in, $protocolId);
+			}
+			return $containerInfos;
+		};
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			$containerInfos = CommonTypes::readDoubleOptional($in, fn(ByteBufferReader $in) => CommonTypes::readList($in, fn(ByteBufferReader $in) => ItemStackResponseContainerInfo::read($in, $protocolId)));
+			//the outer optional is always present
+			$dummy = Byte::readUnsigned($in);
+			if($dummy !== 1){
+				throw new PacketDecodeException("Dummy optional first byte should always be 1, got $dummy");
+			}
+			$containerInfos = CommonTypes::readOptional($in, $readContainerInfos);
 		}else{
-			$containerInfos = $result === self::RESULT_OK ?
-				CommonTypes::readList($in, fn(ByteBufferReader $in) => ItemStackResponseContainerInfo::read($in, $protocolId)) :
-				null;
+			$containerInfos = $result === self::RESULT_OK ? $readContainerInfos($in) : null;
 		}
 		return new self($result, $requestId, $containerInfos);
 	}
@@ -70,11 +76,17 @@ final class ItemStackResponse{
 	public function write(ByteBufferWriter $out, int $protocolId) : void{
 		Byte::writeUnsigned($out, $this->result);
 		CommonTypes::writeItemStackRequestId($out, $this->requestId);
-		$writeContainerInfo = fn(ByteBufferWriter $out, ItemStackResponseContainerInfo $v) => $v->write($out, $protocolId);
+		$writeContainerInfos = static function(ByteBufferWriter $out, array $containerInfos) use ($protocolId) : void{
+			VarInt::writeUnsignedInt($out, count($containerInfos));
+			foreach($containerInfos as $containerInfo){
+				$containerInfo->write($out, $protocolId);
+			}
+		};
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			CommonTypes::writeDoubleOptional($out, $this->containerInfos, fn(ByteBufferWriter $out, array $list) => CommonTypes::writeList($out, $list, $writeContainerInfo));
+			Byte::writeUnsigned($out, 1);
+			CommonTypes::writeOptional($out, $this->containerInfos, $writeContainerInfos);
 		}elseif($this->result === self::RESULT_OK){
-			CommonTypes::writeList($out, $this->containerInfos ?? [], $writeContainerInfo);
+			$writeContainerInfos($out, $this->containerInfos ?? []);
 		}
 	}
 }

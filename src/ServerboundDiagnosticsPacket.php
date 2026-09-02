@@ -17,12 +17,13 @@ namespace pocketmine\network\mcpe\protocol;
 use pmmp\encoding\ByteBufferReader;
 use pmmp\encoding\ByteBufferWriter;
 use pmmp\encoding\LE;
-use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
+use pmmp\encoding\VarInt;
 use pocketmine\network\mcpe\protocol\types\EntityDiagnosticTimingInfo;
 use pocketmine\network\mcpe\protocol\types\MemoryCategoryCounter;
 use pocketmine\network\mcpe\protocol\types\SystemCategory;
 use pocketmine\network\mcpe\protocol\types\SystemDiagnosticTimingInfo;
 use pocketmine\network\mcpe\protocol\types\WhiskerScopeDataSummary;
+use function count;
 
 class ServerboundDiagnosticsPacket extends DataPacket implements ServerboundPacket{
 	public const NETWORK_ID = ProtocolInfo::SERVERBOUND_DIAGNOSTICS_PACKET;
@@ -169,17 +170,34 @@ class ServerboundDiagnosticsPacket extends DataPacket implements ServerboundPack
 		$this->avgUnaccountedTimePercent = LE::readFloat($in);
 
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_0){
-			$this->memoryCategoryValues = CommonTypes::readList($in, MemoryCategoryCounter::read(...));
+			$this->memoryCategoryValues = [];
+			for($i = 0, $count = VarInt::readUnsignedInt($in); $i < $count; $i++){
+				$this->memoryCategoryValues[] = MemoryCategoryCounter::read($in);
+			}
 
 			if($protocolId >= ProtocolInfo::PROTOCOL_1_26_20){
-				$this->entityDiagnostics = CommonTypes::readList($in, EntityDiagnosticTimingInfo::read(...));
-				$this->systemDiagnostics = CommonTypes::readList($in, SystemDiagnosticTimingInfo::read(...));
+				$this->entityDiagnostics = [];
+				for($i = 0, $count = VarInt::readUnsignedInt($in); $i < $count; $i++){
+					$this->entityDiagnostics[] = EntityDiagnosticTimingInfo::read($in);
+				}
+
+				$this->systemDiagnostics = [];
+				for($i = 0, $count = VarInt::readUnsignedInt($in); $i < $count; $i++){
+					$this->systemDiagnostics[] = SystemDiagnosticTimingInfo::read($in);
+				}
 
 				if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-					$this->systemCategories = CommonTypes::readList($in, SystemCategory::read(...));
+					$this->systemCategories = [];
+					for($i = 0, $count = VarInt::readUnsignedInt($in); $i < $count; $i++){
+						$this->systemCategories[] = SystemCategory::read($in);
+					}
 				}
+
 				if($protocolId >= ProtocolInfo::PROTOCOL_1_26_30){
-					$this->whiskerScopes = CommonTypes::readList($in, WhiskerScopeDataSummary::read(...));
+					$this->whiskerScopes = [];
+					for($i = 0, $count = VarInt::readUnsignedInt($in); $i < $count; $i++){
+						$this->whiskerScopes[] = WhiskerScopeDataSummary::read($in);
+					}
 				}
 			}
 		}
@@ -197,17 +215,34 @@ class ServerboundDiagnosticsPacket extends DataPacket implements ServerboundPack
 		LE::writeFloat($out, $this->avgUnaccountedTimePercent);
 
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_0){
-			CommonTypes::writeList($out, $this->memoryCategoryValues, static fn($out, $v) => $v->write($out));
+			VarInt::writeUnsignedInt($out, count($this->memoryCategoryValues));
+			foreach($this->memoryCategoryValues as $value){
+				$value->write($out);
+			}
 
 			if($protocolId >= ProtocolInfo::PROTOCOL_1_26_20){
-				CommonTypes::writeList($out, $this->entityDiagnostics, static fn($out, $v) => $v->write($out));
-				CommonTypes::writeList($out, $this->systemDiagnostics, static fn($out, $v) => $v->write($out));
+				VarInt::writeUnsignedInt($out, count($this->entityDiagnostics));
+				foreach($this->entityDiagnostics as $value){
+					$value->write($out);
+				}
+
+				VarInt::writeUnsignedInt($out, count($this->systemDiagnostics));
+				foreach($this->systemDiagnostics as $value){
+					$value->write($out);
+				}
 
 				if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-					CommonTypes::writeList($out, $this->systemCategories, static fn($out, $v) => $v->write($out));
+					VarInt::writeUnsignedInt($out, count($this->systemCategories));
+					foreach($this->systemCategories as $value){
+						$value->write($out);
+					}
 				}
+
 				if($protocolId >= ProtocolInfo::PROTOCOL_1_26_30){
-					CommonTypes::writeList($out, $this->whiskerScopes, static fn($out, $v) => $v->write($out));
+					VarInt::writeUnsignedInt($out, count($this->whiskerScopes));
+					foreach($this->whiskerScopes as $value){
+						$value->write($out);
+					}
 				}
 			}
 		}
