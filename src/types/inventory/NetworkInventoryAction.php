@@ -155,12 +155,12 @@ class NetworkInventoryAction{
 
 		$this->sourceType = VarInt::readUnsignedInt($in);
 
-		if(Byte::readUnsigned($in) !== 1){
+		if($protocolId < ProtocolInfo::PROTOCOL_1_26_50 && Byte::readUnsigned($in) !== 1){
 			throw new PacketDecodeException("Inconsistent optional state for windowId");
 		}
 		$this->windowId = CommonTypes::readOptional($in, Byte::readSigned(...));
 
-		if(Byte::readUnsigned($in) !== 1){
+		if($protocolId < ProtocolInfo::PROTOCOL_1_26_50 && Byte::readUnsigned($in) !== 1){
 			throw new PacketDecodeException("Inconsistent optional state for sourceFlags");
 		}
 		$this->sourceFlags = CommonTypes::readOptional($in, VarInt::readUnsignedInt(...));
@@ -183,10 +183,14 @@ class NetworkInventoryAction{
 
 		VarInt::writeUnsignedInt($out, $this->sourceType);
 
-		Byte::writeUnsigned($out, 1);
+		if($protocolId < ProtocolInfo::PROTOCOL_1_26_50){
+			Byte::writeUnsigned($out, 1);
+		}
 		CommonTypes::writeOptional($out, $this->windowId, Byte::writeSigned(...));
 
-		Byte::writeUnsigned($out, 1);
+		if($protocolId < ProtocolInfo::PROTOCOL_1_26_50){
+			Byte::writeUnsigned($out, 1);
+		}
 		CommonTypes::writeOptional($out, $this->sourceFlags, VarInt::writeUnsignedInt(...));
 
 		VarInt::writeUnsignedInt($out, $this->inventorySlot);

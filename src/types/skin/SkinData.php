@@ -26,6 +26,8 @@ class SkinData{
 	public const TRUSTED_SKIN_FALSE = "false";
 	public const TRUSTED_SKIN_TRUE = "true";
 
+	public const EMPTY_GEOMETRY_DATA = "{}";
+
 	private SkinImage $capeImage;
 	private string $fullSkinId;
 
@@ -41,7 +43,7 @@ class SkinData{
 		private SkinImage $skinImage,
 		private array $animations = [],
 		?SkinImage $capeImage = null,
-		private string $geometryData = "",
+		private string $geometryData = self::EMPTY_GEOMETRY_DATA,
 		private string $geometryDataEngineVersion = ProtocolInfo::MINECRAFT_VERSION_NETWORK,
 		private string $animationData = "",
 		private string $capeId = "",

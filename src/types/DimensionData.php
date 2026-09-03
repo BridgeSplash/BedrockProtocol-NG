@@ -28,7 +28,8 @@ final class DimensionData{
 		private int $minHeight,
 		private int $generator,
 		private int $dimensionType,
-		private ?UuidInterface $packId = null
+		private ?UuidInterface $packId = null,
+		private ?string $defaultBiome = null
 	){}
 
 	public function getMaxHeight() : int{ return $this->maxHeight; }
@@ -40,6 +41,8 @@ final class DimensionData{
 	public function getDimensionType() : int{ return $this->dimensionType; }
 
 	public function getPackId() : ?UuidInterface{ return $this->packId; }
+
+	public function getDefaultBiome() : ?string{ return $this->defaultBiome; }
 
 	public static function read(ByteBufferReader $in, int $protocolId) : self{
 		$maxHeight = VarInt::readSignedInt($in);
@@ -53,7 +56,11 @@ final class DimensionData{
 			$packId = CommonTypes::getUUID($in);
 		}
 
-		return new self($maxHeight, $minHeight, $generator, $dimensionType ?? DimensionIds::OVERWORLD, $packId ?? null);
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_50){
+			$defaultBiome = CommonTypes::getString($in);
+		}
+
+		return new self($maxHeight, $minHeight, $generator, $dimensionType ?? DimensionIds::OVERWORLD, $packId ?? null, $defaultBiome ?? null);
 	}
 
 	public function write(ByteBufferWriter $out, int $protocolId) : void{
@@ -65,6 +72,9 @@ final class DimensionData{
 		}
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
 			CommonTypes::putUUID($out, $this->packId ?? throw new \InvalidArgumentException("packId must be set since 1.26.40"));
+		}
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_50){
+			CommonTypes::putString($out, $this->defaultBiome ?? throw new \InvalidArgumentException("defaultBiome must be set since 1.26.50"));
 		}
 	}
 }

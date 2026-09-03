@@ -12,30 +12,33 @@
 
 declare(strict_types=1);
 
-namespace pocketmine\network\mcpe\protocol\types\shape;
+namespace pocketmine\network\mcpe\protocol\types;
 
 use pmmp\encoding\Byte;
 use pmmp\encoding\ByteBufferReader;
 use pmmp\encoding\ByteBufferWriter;
-use pocketmine\network\mcpe\protocol\types\GetTypeIdFromConstTrait;
+use pmmp\encoding\VarInt;
 
-final class PrimitiveShapeCircleOrSpherePayload extends PrimitiveShapePayload{
-	use GetTypeIdFromConstTrait;
-
-	public const ID = PrimitiveShapeType::PAYLOAD_TYPE_CIRCLE_OR_SPHERE;
+final class NoiseAlignment{
 
 	public function __construct(
-		private int $segments,
+		private NoiseAlignmentType $type,
+		private int $value
 	){}
 
-	public function getSegments() : int{ return $this->segments; }
+	public function getType() : NoiseAlignmentType{ return $this->type; }
+
+	public function getValue() : int{ return $this->value; }
 
 	public static function read(ByteBufferReader $in) : self{
-		$segments = Byte::readUnsigned($in);
-		return new self($segments);
+		$type = NoiseAlignmentType::fromPacket(Byte::readUnsigned($in));
+		$value = VarInt::readUnsignedInt($in);
+
+		return new self($type, $value);
 	}
 
-	public function write(ByteBufferWriter $out, int $protocolId) : void{
-		Byte::writeUnsigned($out, $this->segments);
+	public function write(ByteBufferWriter $out) : void{
+		Byte::writeUnsigned($out, $this->type->value);
+		VarInt::writeUnsignedInt($out, $this->value);
 	}
 }

@@ -52,10 +52,12 @@ final class ItemStackResponseSlotInfo{
 		$hotbarSlot = Byte::readUnsigned($in);
 		$count = Byte::readUnsigned($in);
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			//the outer optional is always present
-			$dummy = Byte::readUnsigned($in);
-			if($dummy !== 1){
-				throw new PacketDecodeException("Dummy optional first byte should always be 1, got $dummy");
+			if($protocolId < ProtocolInfo::PROTOCOL_1_26_50){
+				//the outer optional is always present
+				$dummy = Byte::readUnsigned($in);
+				if($dummy !== 1){
+					throw new PacketDecodeException("Dummy optional first byte should always be 1, got $dummy");
+				}
 			}
 			$itemStackId = CommonTypes::readOptional($in, CommonTypes::readServerItemStackId(...));
 		}else{
@@ -78,7 +80,9 @@ final class ItemStackResponseSlotInfo{
 		Byte::writeUnsigned($out, $this->hotbarSlot);
 		Byte::writeUnsigned($out, $this->count);
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			Byte::writeUnsigned($out, 1);
+			if($protocolId < ProtocolInfo::PROTOCOL_1_26_50){
+				Byte::writeUnsigned($out, 1);
+			}
 			CommonTypes::writeOptional($out, $this->itemStackId, CommonTypes::writeServerItemStackId(...));
 		}else{
 			CommonTypes::writeServerItemStackId($out, $this->itemStackId ?? throw new \InvalidArgumentException("itemStackId must be set before 1.26.40"));

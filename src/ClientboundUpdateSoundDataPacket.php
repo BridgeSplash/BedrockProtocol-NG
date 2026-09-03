@@ -80,7 +80,15 @@ class ClientboundUpdateSoundDataPacket extends DataPacket implements Clientbound
 
 	protected function decodePayload(ByteBufferReader $in, int $protocolId) : void{
 		$this->serverSoundHandle = LE::readUnsignedLong($in);
-		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_50){
+			$this->stopEvent = SoundDataEvent::read($in);
+			$this->volumeEvent = SoundDataEvent::read($in);
+			$this->pitchEvent = SoundDataEvent::read($in);
+			$this->fadeEvent = SoundDataEvent::read($in);
+			$this->seekToEvent = SoundDataEvent::read($in);
+			$this->pauseEvent = SoundDataEvent::read($in);
+			$this->resumeEvent = SoundDataEvent::read($in);
+		}elseif($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
 			$this->stopEvent = CommonTypes::readOptional($in, SoundDataEvent::read(...));
 			$this->volumeEvent = CommonTypes::readOptional($in, SoundDataEvent::read(...));
 			$this->pitchEvent = CommonTypes::readOptional($in, SoundDataEvent::read(...));
@@ -95,7 +103,22 @@ class ClientboundUpdateSoundDataPacket extends DataPacket implements Clientbound
 
 	protected function encodePayload(ByteBufferWriter $out, int $protocolId) : void{
 		LE::writeUnsignedLong($out, $this->serverSoundHandle);
-		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_50){
+			foreach([
+				"stopEvent" => $this->stopEvent,
+				"volumeEvent" => $this->volumeEvent,
+				"pitchEvent" => $this->pitchEvent,
+				"fadeEvent" => $this->fadeEvent,
+				"seekToEvent" => $this->seekToEvent,
+				"pauseEvent" => $this->pauseEvent,
+				"resumeEvent" => $this->resumeEvent,
+			] as $name => $event){
+				if($event === null){
+					throw new \LogicException("$name is mandatory since " . ProtocolInfo::PROTOCOL_1_26_50);
+				}
+				$event->write($out);
+			}
+		}elseif($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
 			$writeEvent = static fn(ByteBufferWriter $out, SoundDataEvent $data) => $data->write($out);
 			CommonTypes::writeOptional($out, $this->stopEvent, $writeEvent);
 			CommonTypes::writeOptional($out, $this->volumeEvent, $writeEvent);

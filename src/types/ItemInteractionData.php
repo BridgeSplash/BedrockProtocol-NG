@@ -68,12 +68,17 @@ final class ItemInteractionData{
 			}
 		}
 		$transactionData = new UseItemTransactionData();
-		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			//two dummy optionals which are always present
-			self::readDummyOptional($in);
-			self::readDummyOptional($in);
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_50){
+			//since 1.26.50 the transaction is framed exactly like in InventoryTransactionPacket
+			$transactionData->decodeTransaction($in, $protocolId);
+		}else{
+			if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
+				//two dummy optionals which are always present
+				self::readDummyOptional($in);
+				self::readDummyOptional($in);
+			}
+			$transactionData->decodeAuthInput($in, $protocolId);
 		}
-		$transactionData->decodeAuthInput($in, $protocolId);
 		return new ItemInteractionData($requestId, $requestChangedSlots, $transactionData);
 	}
 
@@ -94,14 +99,20 @@ final class ItemInteractionData{
 					$changedSlot->write($out);
 				}
 			});
-			Byte::writeUnsigned($out, 1);
-			Byte::writeUnsigned($out, 1);
+			if($protocolId < ProtocolInfo::PROTOCOL_1_26_50){
+				Byte::writeUnsigned($out, 1);
+				Byte::writeUnsigned($out, 1);
+			}
 		}elseif($this->requestId !== 0){
 			VarInt::writeUnsignedInt($out, count($this->requestChangedSlots ?? []));
 			foreach($this->requestChangedSlots ?? [] as $changedSlot){
 				$changedSlot->write($out);
 			}
 		}
-		$this->transactionData->encodeAuthInput($out, $protocolId);
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_50){
+			$this->transactionData->encodeTransaction($out, $protocolId);
+		}else{
+			$this->transactionData->encodeAuthInput($out, $protocolId);
+		}
 	}
 }

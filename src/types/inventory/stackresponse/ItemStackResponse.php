@@ -61,10 +61,12 @@ final class ItemStackResponse{
 			return $containerInfos;
 		};
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			//the outer optional is always present
-			$dummy = Byte::readUnsigned($in);
-			if($dummy !== 1){
-				throw new PacketDecodeException("Dummy optional first byte should always be 1, got $dummy");
+			if($protocolId < ProtocolInfo::PROTOCOL_1_26_50){
+				//the outer optional is always present
+				$dummy = Byte::readUnsigned($in);
+				if($dummy !== 1){
+					throw new PacketDecodeException("Dummy optional first byte should always be 1, got $dummy");
+				}
 			}
 			$containerInfos = CommonTypes::readOptional($in, $readContainerInfos);
 		}else{
@@ -83,7 +85,9 @@ final class ItemStackResponse{
 			}
 		};
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			Byte::writeUnsigned($out, 1);
+			if($protocolId < ProtocolInfo::PROTOCOL_1_26_50){
+				Byte::writeUnsigned($out, 1);
+			}
 			CommonTypes::writeOptional($out, $this->containerInfos, $writeContainerInfos);
 		}elseif($this->result === self::RESULT_OK){
 			$writeContainerInfos($out, $this->containerInfos ?? []);

@@ -24,6 +24,7 @@ use pocketmine\network\mcpe\protocol\ProtocolInfo;
 use pocketmine\network\mcpe\protocol\serializer\CommonTypes;
 use pocketmine\network\mcpe\protocol\types\BlockPosition;
 use pocketmine\network\mcpe\protocol\types\GetTypeIdFromConstTrait;
+use pocketmine\network\mcpe\protocol\types\HandSlot;
 
 class UseItemTransactionData extends TransactionData{
 	use GetTypeIdFromConstTrait;
@@ -40,6 +41,7 @@ class UseItemTransactionData extends TransactionData{
 	private BlockPosition $blockPosition;
 	private int $face;
 	private int $hotbarSlot;
+	private HandSlot $handSlot = HandSlot::MAIN_HAND;
 	private ItemStackWrapper $itemInHand;
 	private Vector3 $playerPosition;
 	private Vector3 $clickPosition;
@@ -63,6 +65,10 @@ class UseItemTransactionData extends TransactionData{
 
 	public function getHotbarSlot() : int{
 		return $this->hotbarSlot;
+	}
+
+	public function getHandSlot() : HandSlot{
+		return $this->handSlot;
 	}
 
 	public function getItemInHand() : ItemStackWrapper{
@@ -101,6 +107,9 @@ class UseItemTransactionData extends TransactionData{
 			$this->face = VarInt::readSignedInt($in);
 		}
 		$this->hotbarSlot = VarInt::readSignedInt($in);
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_50){
+			$this->handSlot = HandSlot::fromPacket(Byte::readUnsigned($in));
+		}
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_30){
 			$this->itemInHand = CommonTypes::getNetworkItemStackDescriptor($in, $protocolId);
 		}else{
@@ -137,6 +146,9 @@ class UseItemTransactionData extends TransactionData{
 			VarInt::writeSignedInt($out, $this->face);
 		}
 		VarInt::writeSignedInt($out, $this->hotbarSlot);
+		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_50){
+			Byte::writeUnsigned($out, $this->handSlot->value);
+		}
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_30){
 			CommonTypes::putNetworkItemStackDescriptor($out, $protocolId, $this->itemInHand);
 		}else{
@@ -166,6 +178,7 @@ class UseItemTransactionData extends TransactionData{
 		\pocketmine\network\mcpe\protocol\types\BlockPosition $blockPosition,
 		int $face,
 		int $hotbarSlot,
+		\pocketmine\network\mcpe\protocol\types\HandSlot $handSlot,
 		\pocketmine\network\mcpe\protocol\types\inventory\ItemStackWrapper $itemInHand,
 		\pocketmine\math\Vector3 $playerPosition,
 		\pocketmine\math\Vector3 $clickPosition,
@@ -179,6 +192,7 @@ class UseItemTransactionData extends TransactionData{
 		$result->blockPosition = $blockPosition;
 		$result->face = $face;
 		$result->hotbarSlot = $hotbarSlot;
+		$result->handSlot = $handSlot;
 		$result->itemInHand = $itemInHand;
 		$result->playerPosition = $playerPosition;
 		$result->clickPosition = $clickPosition;
@@ -191,8 +205,8 @@ class UseItemTransactionData extends TransactionData{
 	/**
 	 * @param NetworkInventoryAction[] $actions
 	 */
-	public static function new(array $actions, int $actionType, TriggerType $triggerType, BlockPosition $blockPosition, int $face, int $hotbarSlot, ItemStackWrapper $itemInHand, Vector3 $playerPosition, Vector3 $clickPosition, int $blockRuntimeId, PredictedResult $clientInteractPrediction, int $clientCooldownState) : self{
-		$result = self::initSelf($actionType, $triggerType, $blockPosition, $face, $hotbarSlot, $itemInHand, $playerPosition, $clickPosition, $blockRuntimeId, $clientInteractPrediction, $clientCooldownState);
+	public static function new(array $actions, int $actionType, TriggerType $triggerType, BlockPosition $blockPosition, int $face, int $hotbarSlot, HandSlot $handSlot, ItemStackWrapper $itemInHand, Vector3 $playerPosition, Vector3 $clickPosition, int $blockRuntimeId, PredictedResult $clientInteractPrediction, int $clientCooldownState) : self{
+		$result = self::initSelf($actionType, $triggerType, $blockPosition, $face, $hotbarSlot, $handSlot, $itemInHand, $playerPosition, $clickPosition, $blockRuntimeId, $clientInteractPrediction, $clientCooldownState);
 		$result->actions = $actions;
 		return $result;
 	}

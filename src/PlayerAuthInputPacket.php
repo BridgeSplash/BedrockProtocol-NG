@@ -285,7 +285,9 @@ class PlayerAuthInputPacket extends DataPacket implements ServerboundPacket{
 		$this->moveVecZ = LE::readFloat($in);
 		$this->headYaw = LE::readFloat($in);
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			self::readDummyOptional($in);
+			if($protocolId < ProtocolInfo::PROTOCOL_1_26_50){
+				self::readDummyOptional($in);
+			}
 			$this->inputFlags = new BitSet(PlayerAuthInputFlags::NUMBER_OF_FLAGS);
 			for($i = 0, $flagCount = VarInt::readUnsignedInt($in); $i < $flagCount; ++$i){
 				$flag = VarInt::readSignedInt($in);
@@ -311,9 +313,9 @@ class PlayerAuthInputPacket extends DataPacket implements ServerboundPacket{
 		$this->tick = VarInt::readUnsignedLong($in);
 		$this->delta = CommonTypes::getVector3($in);
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			$this->itemInteractionData = self::readDoubleOptional($in, fn(ByteBufferReader $in) => ItemInteractionData::read($in, $protocolId));
-			$this->itemStackRequest = self::readDoubleOptional($in, fn(ByteBufferReader $in) => ItemStackRequest::read($in, $protocolId));
-			$this->blockActions = self::readDoubleOptional($in, function(ByteBufferReader $in) use ($protocolId) : array{
+			$this->itemInteractionData = self::readDoubleOptional($in, $protocolId, fn(ByteBufferReader $in) => ItemInteractionData::read($in, $protocolId));
+			$this->itemStackRequest = self::readDoubleOptional($in, $protocolId, fn(ByteBufferReader $in) => ItemStackRequest::read($in, $protocolId));
+			$this->blockActions = self::readDoubleOptional($in, $protocolId, function(ByteBufferReader $in) use ($protocolId) : array{
 				$actions = [];
 				for($i = 0, $max = VarInt::readUnsignedInt($in); $i < $max; ++$i){
 					$actions[] = PlayerBlockAction::read($in, $protocolId);
@@ -321,8 +323,8 @@ class PlayerAuthInputPacket extends DataPacket implements ServerboundPacket{
 				return $actions;
 			});
 
-			$vehicleRotation = self::readDoubleOptional($in, CommonTypes::getVector2(...));
-			$vehicleActorUniqueId = self::readDoubleOptional($in, CommonTypes::getActorUniqueId(...));
+			$vehicleRotation = self::readDoubleOptional($in, $protocolId, CommonTypes::getVector2(...));
+			$vehicleActorUniqueId = self::readDoubleOptional($in, $protocolId, CommonTypes::getActorUniqueId(...));
 			if($vehicleRotation !== null && $vehicleActorUniqueId !== null){
 				$this->vehicleInfo = new PlayerAuthInputVehicleInfo($vehicleRotation->x, $vehicleRotation->y, $vehicleActorUniqueId);
 			}elseif($vehicleRotation !== null || $vehicleActorUniqueId !== null){
@@ -370,7 +372,9 @@ class PlayerAuthInputPacket extends DataPacket implements ServerboundPacket{
 		LE::writeFloat($out, $this->moveVecZ);
 		LE::writeFloat($out, $this->headYaw);
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			Byte::writeUnsigned($out, 1);
+			if($protocolId < ProtocolInfo::PROTOCOL_1_26_50){
+				Byte::writeUnsigned($out, 1);
+			}
 			$setFlags = [];
 			for($i = 0; $i < PlayerAuthInputFlags::NUMBER_OF_FLAGS; ++$i){
 				if($this->inputFlags->get($i)){
@@ -400,9 +404,9 @@ class PlayerAuthInputPacket extends DataPacket implements ServerboundPacket{
 		VarInt::writeUnsignedLong($out, $this->tick);
 		CommonTypes::putVector3($out, $this->delta);
 		if($protocolId >= ProtocolInfo::PROTOCOL_1_26_40){
-			self::writeDoubleOptional($out, $this->itemInteractionData, fn(ByteBufferWriter $out, ItemInteractionData $v) => $v->write($out, $protocolId));
-			self::writeDoubleOptional($out, $this->itemStackRequest, fn(ByteBufferWriter $out, ItemStackRequest $v) => $v->write($out, $protocolId));
-			self::writeDoubleOptional($out, $this->blockActions, function(ByteBufferWriter $out, array $actions) use ($protocolId) : void{
+			self::writeDoubleOptional($out, $protocolId, $this->itemInteractionData, fn(ByteBufferWriter $out, ItemInteractionData $v) => $v->write($out, $protocolId));
+			self::writeDoubleOptional($out, $protocolId, $this->itemStackRequest, fn(ByteBufferWriter $out, ItemStackRequest $v) => $v->write($out, $protocolId));
+			self::writeDoubleOptional($out, $protocolId, $this->blockActions, function(ByteBufferWriter $out, array $actions) use ($protocolId) : void{
 				VarInt::writeUnsignedInt($out, count($actions));
 				foreach($actions as $action){
 					$action->write($out, $protocolId);
@@ -410,8 +414,8 @@ class PlayerAuthInputPacket extends DataPacket implements ServerboundPacket{
 			});
 
 			$vehicleInfo = $this->vehicleInfo;
-			self::writeDoubleOptional($out, $vehicleInfo === null ? null : new Vector2($vehicleInfo->getVehicleRotationX() ?? 0.0, $vehicleInfo->getVehicleRotationZ() ?? 0.0), CommonTypes::putVector2(...));
-			self::writeDoubleOptional($out, $vehicleInfo?->getPredictedVehicleActorUniqueId(), CommonTypes::putActorUniqueId(...));
+			self::writeDoubleOptional($out, $protocolId, $vehicleInfo === null ? null : new Vector2($vehicleInfo->getVehicleRotationX() ?? 0.0, $vehicleInfo->getVehicleRotationZ() ?? 0.0), CommonTypes::putVector2(...));
+			self::writeDoubleOptional($out, $protocolId, $vehicleInfo?->getPredictedVehicleActorUniqueId(), CommonTypes::putActorUniqueId(...));
 		}else{
 			if($this->itemInteractionData !== null){
 				$this->itemInteractionData->write($out, $protocolId);
@@ -452,8 +456,10 @@ class PlayerAuthInputPacket extends DataPacket implements ServerboundPacket{
 	 * @phpstan-param \Closure(ByteBufferReader) : T $reader
 	 * @phpstan-return T|null
 	 */
-	private static function readDoubleOptional(ByteBufferReader $in, \Closure $reader) : mixed{
-		self::readDummyOptional($in);
+	private static function readDoubleOptional(ByteBufferReader $in, int $protocolId, \Closure $reader) : mixed{
+		if($protocolId < ProtocolInfo::PROTOCOL_1_26_50){
+			self::readDummyOptional($in);
+		}
 		return CommonTypes::readOptional($in, $reader);
 	}
 
@@ -462,8 +468,10 @@ class PlayerAuthInputPacket extends DataPacket implements ServerboundPacket{
 	 * @phpstan-param T|null $value
 	 * @phpstan-param \Closure(ByteBufferWriter, T) : void $writer
 	 */
-	private static function writeDoubleOptional(ByteBufferWriter $out, mixed $value, \Closure $writer) : void{
-		Byte::writeUnsigned($out, 1);
+	private static function writeDoubleOptional(ByteBufferWriter $out, int $protocolId, mixed $value, \Closure $writer) : void{
+		if($protocolId < ProtocolInfo::PROTOCOL_1_26_50){
+			Byte::writeUnsigned($out, 1);
+		}
 		CommonTypes::writeOptional($out, $value, $writer);
 	}
 
